@@ -20,25 +20,36 @@ interface Props {
 }
 
 export default function RegisterScreen({ navigation }: Props) {
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
-  const [name, setName] = useState("")
   const [password, setPassword] = useState("")
-  const [phone, setPhone] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [loading, setLoading] = useState(false)
-  const [errors, setErrors] = useState<{ email?: string; name?: string; password?: string }>({})
+  const [errors, setErrors] = useState<{
+    email?: string
+    firstName?: string
+    lastName?: string
+    password?: string
+    confirmPassword?: string
+  }>({})
 
   const validateForm = (): boolean => {
     const emailError = getEmailError(email)
-    const nameError = getNameError(name)
+    const firstNameError = !firstName.trim() ? "Họ là bắt buộc" : firstName.trim().length < 2 ? "Họ phải có ít nhất 2 ký tự" : undefined
+    const lastNameError = !lastName.trim() ? "Tên là bắt buộc" : lastName.trim().length < 2 ? "Tên phải có ít nhất 2 ký tự" : undefined
     const passwordError = getPasswordError(password)
+    const confirmPasswordError = !confirmPassword ? "Xác nhận mật khẩu là bắt buộc" : confirmPassword !== password ? "Mật khẩu xác nhận không khớp" : undefined
 
     setErrors({
       email: emailError,
-      name: nameError,
+      firstName: firstNameError,
+      lastName: lastNameError,
       password: passwordError,
+      confirmPassword: confirmPasswordError,
     })
 
-    return !emailError && !nameError && !passwordError
+    return !emailError && !firstNameError && !lastNameError && !passwordError && !confirmPasswordError
   }
 
   const handleRegister = async () => {
@@ -50,9 +61,8 @@ export default function RegisterScreen({ navigation }: Props) {
     try {
       const response = await AuthService.registerWithOtp({
         email,
-        name,
+        name: `${firstName} ${lastName}`.trim(),
         password,
-        phone: phone || undefined,
       })
 
       Alert.alert("Thành công", response.message || "Đã gửi mã OTP đến email của bạn. Vui lòng kiểm tra và xác thực.", [
@@ -83,6 +93,32 @@ export default function RegisterScreen({ navigation }: Props) {
 
       <View style={styles.form}>
         <CustomInput
+          label="Họ"
+          placeholder="Nhập họ"
+          value={firstName}
+          onChangeText={(text) => {
+            setFirstName(text)
+            if (errors.firstName) {
+              setErrors((prev) => ({ ...prev, firstName: undefined }))
+            }
+          }}
+          error={errors.firstName}
+        />
+
+        <CustomInput
+          label="Tên"
+          placeholder="Nhập tên"
+          value={lastName}
+          onChangeText={(text) => {
+            setLastName(text)
+            if (errors.lastName) {
+              setErrors((prev) => ({ ...prev, lastName: undefined }))
+            }
+          }}
+          error={errors.lastName}
+        />
+
+        <CustomInput
           label="Email"
           placeholder="Nhập email"
           value={email}
@@ -98,27 +134,6 @@ export default function RegisterScreen({ navigation }: Props) {
         />
 
         <CustomInput
-          label="Tên"
-          placeholder="Nhập tên"
-          value={name}
-          onChangeText={(text) => {
-            setName(text)
-            if (errors.name) {
-              setErrors((prev) => ({ ...prev, name: undefined }))
-            }
-          }}
-          error={errors.name}
-        />
-
-        <CustomInput
-          label="Số điện thoại (tùy chọn)"
-          placeholder="Nhập số điện thoại"
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="phone-pad"
-        />
-
-        <CustomInput
           label="Mật khẩu"
           placeholder="Nhập mật khẩu"
           value={password}
@@ -130,6 +145,20 @@ export default function RegisterScreen({ navigation }: Props) {
           }}
           isPassword
           error={errors.password}
+        />
+
+        <CustomInput
+          label="Xác nhận mật khẩu"
+          placeholder="Nhập lại mật khẩu"
+          value={confirmPassword}
+          onChangeText={(text) => {
+            setConfirmPassword(text)
+            if (errors.confirmPassword) {
+              setErrors((prev) => ({ ...prev, confirmPassword: undefined }))
+            }
+          }}
+          isPassword
+          error={errors.confirmPassword}
         />
 
         <Text style={styles.termsText}>

@@ -12,13 +12,25 @@ class ApiClient {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`
 
-    const config: RequestInit = {
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-      ...options,
+    // Only set Content-Type if there is a body
+    const headers: Record<string, string> = {
+      ...(options.headers as Record<string, string> || {}),
     }
+    if (options.body) {
+      headers["Content-Type"] = "application/json"
+    }
+
+    const config: RequestInit = {
+      ...options,
+      headers,
+    }
+
+    console.log("Request:", {
+      url,
+      method: config.method,
+      headers: config.headers,
+      body: config.body,
+    });
 
     try {
       const controller = new AbortController()
@@ -32,8 +44,17 @@ class ApiClient {
       clearTimeout(timeoutId)
 
       const data = await response.json()
+      console.log("Server response:", data)
 
       if (!response.ok) {
+        if (data.errors) {
+          throw { 
+            name: "ValidationError", 
+            message: data.title || "Validation failed", 
+            errors: data.errors, 
+            status: response.status 
+          }
+        }
         throw new Error(data.message || `HTTP error! status: ${response.status}`)
       }
 

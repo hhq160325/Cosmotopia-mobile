@@ -1,6 +1,6 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: "https://localhost:7191/api",
+  BASE_URL: "https://192.168.1.10:7191/api",
   ENDPOINTS: {
     LOGIN: "/User/Login",
     REGISTER_WITH_OTP: "/User/registerwithotp",
