@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, StatusBar } from "react-native"
+import React, { useEffect, useState } from "react"
+import { View, Text, FlatList, TextInput, Image, StyleSheet, StatusBar, ScrollView, KeyboardAvoidingView, Platform } from "react-native"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import type { RootStackParamList } from "../types/navigation"
 import { CustomButton } from "../components/CustomButton"
@@ -6,6 +7,9 @@ import { StorageService } from "../services/storageService"
 import { Colors } from "../constants/Colors"
 import { Spacing } from "../constants/Dimensions"
 import { GlobalStyles } from "../styles/GlobalStyles"
+import { apiClient } from "../services/apiClient"
+import { Product } from "../types/products.type"
+import ProductCard from "../components/ProductCard"
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, "Home">
 
@@ -14,6 +18,34 @@ interface Props {
 }
 
 export default function HomeScreen({ navigation }: Props) {
+  const [products, setProducts] = useState<Product[]>([])
+  const [search, setSearch] = useState("")
+  const [filteredProducts, setFilteredProducts] = useState<any[]>([])
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+     const response = await apiClient.get<Product[]>("/Product/GetAllProduct")
+
+      setProducts(response.data || [])
+      setFilteredProducts(response.data || [])
+    }
+    fetchProducts()
+  }, [])
+
+  const handleSearch = () => {
+    setFilteredProducts(
+      search
+        ? products.filter(product =>
+            !isNaN(Number(search))
+              ? String(product.productId).includes(search)
+              : product.name && product.name.toLowerCase().includes(search.toLowerCase())
+          )
+        : products
+    )
+  }
+
+  console.log('Filtered products:', filteredProducts)
+
   const handleLogout = async () => {
     await StorageService.clearAuthData()
     navigation.reset({
@@ -22,10 +54,9 @@ export default function HomeScreen({ navigation }: Props) {
     })
   }
 
-  return (
-    <View style={styles.container}>
+  const ListHeader = () => (
+    <>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
-
       <View style={styles.content}>
         <View style={styles.logoContainer}>
           <View style={styles.logo}>
@@ -41,13 +72,55 @@ export default function HomeScreen({ navigation }: Props) {
           <Text style={styles.featureTitle}>Khám phá các tính năng:</Text>
           <Text style={styles.featureItem}>🌟 Quản lý tài khoản cá nhân</Text>
           <Text style={styles.featureItem}>🚀 Khám phá nội dung mới</Text>
-          <Text style={styles.featureItem}>🌍 Kết nối với cộng đồng</Text>
-          <Text style={styles.featureItem}>⚡ Trải nghiệm tốc độ cao</Text>
         </View>
 
-        <CustomButton title="Đăng xuất" onPress={handleLogout} variant="secondary" style={styles.logoutButton} />
+        <TextInput
+          placeholder="Search products..."
+          value={search}
+          onChangeText={text => setSearch(text)}
+          onSubmitEditing={handleSearch}
+          style={styles.searchBar}
+          returnKeyType="search"
+        />
+        <CustomButton title="Search" onPress={handleSearch} style={{ marginTop: 8, minWidth: 100 }} />
       </View>
-    </View>
+    </>
+  )
+
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <FlatList
+        data={filteredProducts || products}
+        keyExtractor={item => String(item.productId)}
+        ListHeaderComponent={<ListHeader />}
+        numColumns={2}
+        columnWrapperStyle={styles.row}
+        renderItem={({ item }) => (
+          <View style={styles.itemContainer}>
+            <Image
+              source={{ uri: item.imageUrls?.[0] || 'https://via.placeholder.com/80' }}
+              style={styles.image}
+            />
+            <View style={styles.info}>
+              <Text style={styles.name}>ID: {item.productId}</Text>
+              <Text style={styles.name}>{item.name}</Text>
+              <Text>{item.description}</Text>
+              <Text style={styles.price}>Giá: {item.price} VND</Text>
+              <Text>Số lượng: {item.stockQuantity}</Text>
+              <Text>Ảnh: {item.imageUrls?.[0]}</Text>
+            </View>
+          </View>
+        )}
+        ListFooterComponent={
+          <CustomButton title="Đăng xuất" onPress={handleLogout} variant="secondary" style={styles.logoutButton} />
+        }
+        contentContainerStyle={{ paddingBottom: 20 }}
+        style={styles.container}
+      />
+    </KeyboardAvoidingView>
   )
 }
 
@@ -58,9 +131,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
   },
   content: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    flex: 1,  
+    justifyContent: "center", 
+    alignItems: "center",     
   },
   logoContainer: {
     alignItems: "center",
@@ -122,4 +195,23 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xl,
     minWidth: 200,
   },
+  searchBar: { borderWidth: 1, borderRadius: 8, padding: 8, marginBottom: 10 },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 15,
+  },
+  itemContainer: {
+    flex: 1,
+    marginRight: 10,
+    marginBottom: 0,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    overflow: "hidden",
+    maxWidth: '48%',
+  },
+  image: { width: 80, height: 80, marginRight: 10 },
+  info: { flex: 1, justifyContent: "center" },
+  name: { fontWeight: "bold", fontSize: 16 },
+  price: { color: "green", marginTop: 5 }
 })

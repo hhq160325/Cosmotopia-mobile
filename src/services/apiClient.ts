@@ -25,12 +25,12 @@ class ApiClient {
       headers,
     }
 
-    console.log("Request:", {
-      url,
-      method: config.method,
-      headers: config.headers,
-      body: config.body,
-    });
+    // console.log("Request:", {
+    //   url,
+    //   method: config.method,
+    //   headers: config.headers,
+    //   body: config.body,
+    // });
 
     try {
       const controller = new AbortController()
@@ -44,7 +44,6 @@ class ApiClient {
       clearTimeout(timeoutId)
 
       const data = await response.json()
-      console.log("Server response:", data)
 
       if (!response.ok) {
         if (data.errors) {
