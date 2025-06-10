@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { View, Text, FlatList, TextInput, Image, StyleSheet, StatusBar, ScrollView, KeyboardAvoidingView, Platform } from "react-native"
+import { View, Text, FlatList, TextInput, Image, StyleSheet, StatusBar, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import type { RootStackParamList } from "../types/navigation"
 import { CustomButton } from "../components/CustomButton"
@@ -19,8 +19,6 @@ interface Props {
 
 export default function HomeScreen({ navigation }: Props) {
   const [products, setProducts] = useState<Product[]>([])
-  const [search, setSearch] = useState("")
-  const [filteredProducts, setFilteredProducts] = useState<any[]>([])
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -31,29 +29,13 @@ export default function HomeScreen({ navigation }: Props) {
         const data = await response.json()
         const productsItem = data.products
         setProducts(productsItem || [])
-        setFilteredProducts(productsItem || [])
       } catch (error) {
         console.error("Failed to fetch products:", error)
         setProducts([])
-        setFilteredProducts([])
       }
     }
     fetchProducts()
   }, [])
-
-  const handleSearch = () => {
-    setFilteredProducts(
-      search
-        ? products.filter(product =>
-            !isNaN(Number(search))
-              ? String(product.productId).includes(search)
-              : product.name && product.name.toLowerCase().includes(search.toLowerCase())
-          )
-        : products
-    )
-  }
-
-  console.log('Filtered products:', filteredProducts)
 
   const handleLogout = async () => {
     await StorageService.clearAuthData()
@@ -77,21 +59,7 @@ export default function HomeScreen({ navigation }: Props) {
         <Text style={GlobalStyles.title}>Chào mừng đến với Cosmotopia!</Text>
         <Text style={styles.subtitle}>Bạn đã đăng nhập thành công vào vũ trụ số của chúng tôi</Text>
 
-        <View style={styles.features}>
-          <Text style={styles.featureTitle}>Khám phá các tính năng:</Text>
-          <Text style={styles.featureItem}>🌟 Quản lý tài khoản cá nhân</Text>
-          <Text style={styles.featureItem}>🚀 Khám phá nội dung mới</Text>
-        </View>
-
-        <TextInput
-          placeholder="Search products..."
-          value={search}
-          onChangeText={text => setSearch(text)}
-          onSubmitEditing={handleSearch}
-          style={styles.searchBar}
-          returnKeyType="search"
-        />
-        <CustomButton title="Search" onPress={handleSearch} style={{ marginTop: 8, minWidth: 100 }} />
+    
       </View>
     </>
   )
@@ -102,17 +70,22 @@ export default function HomeScreen({ navigation }: Props) {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <FlatList
-        data={filteredProducts || products}
+        data={products}
         keyExtractor={item => String(item.productId)}
         ListHeaderComponent={<ListHeader />}
         numColumns={2}
         columnWrapperStyle={styles.row}
         renderItem={({ item }) => (
           <View style={styles.itemContainer}>
-            <Image
-              source={{ uri: item.imageUrls?.[0] || 'https://via.placeholder.com/80' }}
-              style={styles.image}
-            />
+            <TouchableOpacity
+              onPress={() => navigation.navigate('ProductDetail', { product: item })}
+              style={styles.imageContainer}
+            >
+              <Image
+                source={{ uri: item.imageUrls?.[0] || 'https://via.placeholder.com/80' }}
+                style={styles.image}
+              />
+            </TouchableOpacity>
             <View style={styles.info}>
               <Text style={styles.name}>{item.name}</Text>
               <Text>{item.description}</Text>
@@ -217,7 +190,18 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     maxWidth: '48%',
   },
-  image: { width: 80, height: 80, marginRight: 10 },
+  imageContainer: {
+    width: 80,
+    height: 80,
+    marginRight: 10,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  image: { 
+    width: '100%', 
+    height: '100%',
+    resizeMode: 'cover',
+  },
   info: { flex: 1, justifyContent: "center" },
   name: { fontWeight: "bold", fontSize: 16 },
   price: { color: "green", marginTop: 5 }

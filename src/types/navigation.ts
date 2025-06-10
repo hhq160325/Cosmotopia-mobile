@@ -5,4 +5,5 @@ export type RootStackParamList = {
   VerifyOtp: { email: string; fromRegister?: boolean }
   ResetPassword: { email: string }
   Home: undefined
+  ProductDetail: { product: Product }
 }

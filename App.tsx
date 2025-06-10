@@ -15,6 +15,7 @@ import ForgotPasswordScreen from "./src/screens/ForgotPasswordScreen"
 import VerifyOtpScreen from "./src/screens/VerifyOtpScreen"
 import ResetPasswordScreen from "./src/screens/ResetPasswordScreen"
 import HomeScreen from "./src/screens/HomeScreen"
+import ProductDetailScreen from "./src/screens/ProductDetailScreen"
 
 // Types
 import type { RootStackParamList } from "./src/types/navigation"
@@ -80,6 +81,7 @@ export default function App() {
         <Stack.Screen name="VerifyOtp" component={VerifyOtpScreen} />
         <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   )
