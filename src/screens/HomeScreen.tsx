@@ -24,10 +24,19 @@ export default function HomeScreen({ navigation }: Props) {
 
   useEffect(() => {
     const fetchProducts = async () => {
-     const response = await apiClient.get<Product[]>("/Product/GetAllProduct")
-
-      setProducts(response.data || [])
-      setFilteredProducts(response.data || [])
+      try {
+        const response = await fetch(
+          "https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Product/GetAllProduct"
+        )
+        const data = await response.json()
+        const productsItem = data.products
+        setProducts(productsItem || [])
+        setFilteredProducts(productsItem || [])
+      } catch (error) {
+        console.error("Failed to fetch products:", error)
+        setProducts([])
+        setFilteredProducts([])
+      }
     }
     fetchProducts()
   }, [])
@@ -105,12 +114,10 @@ export default function HomeScreen({ navigation }: Props) {
               style={styles.image}
             />
             <View style={styles.info}>
-              <Text style={styles.name}>ID: {item.productId}</Text>
               <Text style={styles.name}>{item.name}</Text>
               <Text>{item.description}</Text>
               <Text style={styles.price}>Giá: {item.price} VND</Text>
               <Text>Số lượng: {item.stockQuantity}</Text>
-              <Text>Ảnh: {item.imageUrls?.[0]}</Text>
             </View>
           </View>
         )}
