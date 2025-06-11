@@ -43,7 +43,11 @@ export class StorageService {
 
   static async setUserData(userData: any): Promise<void> {
     try {
-      await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(userData))
+      if (userData === null || userData === undefined) {
+        await AsyncStorage.removeItem(STORAGE_KEYS.USER_DATA)
+      } else {
+        await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(userData))
+      }
     } catch (error) {
       console.error("Error saving user data:", error)
     }

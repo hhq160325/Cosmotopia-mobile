@@ -7,13 +7,23 @@ type Props = {
 };
 
 const ProductCard = ({ product }: Props) => {
+  const firstImageUrl = product.imageUrls && product.imageUrls.length > 0 
+    ? product.imageUrls[0] 
+    : undefined;
+
+  const imageUrl = typeof firstImageUrl === 'string' 
+    ? firstImageUrl 
+    : 'https://via.placeholder.com/80'; // Fallback image URL
+
   return (
     <View style={styles.card}>
-      <Image source={{ uri: product.imageUrls[0] }} style={styles.image} />
-      <Text style={styles.name}>{product.name}</Text>
-      <Text style={styles.meta}>{product.brand.name} • {product.category.name}</Text>
+      <Image source={{ uri: imageUrl }} style={styles.image} />
+      <Text style={styles.name}>{product.name || 'N/A'}</Text>
+      <Text style={styles.meta}>
+        {product.brand?.name || 'N/A'} • {product.category?.name || 'N/A'}
+      </Text>
       <Text style={styles.price}>{(product.price / 1000).toLocaleString()}₫</Text>
-      <Text style={styles.description}>{product.description}</Text>
+      <Text style={styles.description}>{product.description || 'No description available.'}</Text>
     </View>
   );
 };
