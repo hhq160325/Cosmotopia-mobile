@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react"
 import { View, Text, FlatList, TextInput, Image, StyleSheet, StatusBar, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native"
 import type { StackNavigationProp } from "@react-navigation/stack"
-import type { RootStackParamList } from "../types/navigation"
+import type { RootStackParamList, BottomTabParamList } from "../types/navigation"
+import { CompositeNavigationProp } from '@react-navigation/native'
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
 import { CustomButton } from "../components/CustomButton"
 import { StorageService } from "../services/storageService"
 import { Colors } from "../constants/Colors"
@@ -10,8 +12,12 @@ import { GlobalStyles } from "../styles/GlobalStyles"
 import { apiClient } from "../services/apiClient"
 import { Product, Brand, Category } from "../types/products.type"
 import ProductCard from "../components/ProductCard"
+import { CommonActions } from '@react-navigation/native'
 
-type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, "Home">
+type HomeScreenNavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<BottomTabParamList, 'HomeTab'>,
+  StackNavigationProp<RootStackParamList>
+>
 
 interface Props {
   navigation: HomeScreenNavigationProp
@@ -164,10 +170,12 @@ export default function HomeScreen({ navigation }: Props) {
 
   const handleLogout = async () => {
     await StorageService.clearAuthData()
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "Login" }],
-    })
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      })
+    )
   }
 
   const filteredProducts = selectedBrand

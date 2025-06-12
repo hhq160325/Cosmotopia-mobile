@@ -22,7 +22,7 @@ import HomeScreen from "./src/screens/HomeScreen"
 import ProductDetailScreen from "./src/screens/ProductDetailScreen"
 import PlaceholderListScreen from "./src/screens/PlaceholderListScreen"
 import CreateProductScreen from "./src/screens/CreateProductScreen"
-import PlaceholderBookScreen from "./src/screens/PlaceholderBookScreen"
+import PlaceholderProductScreen from "./src/screens/PlaceholderProductScreen"
 import MenuScreen from "./src/screens/MenuScreen"
 
 // Types
@@ -70,8 +70,8 @@ function BottomTabNavigator() {
                 <Ionicons name="add" size={30} color="white" />
               </View>
             );
-          } else if (route.name === 'BookTab') {
-            iconName = focused ? 'book' : 'book-outline';
+          } else if (route.name === 'ProductTab') {
+            iconName = focused ? 'cube' : 'cube-outline';
           } else if (route.name === 'MenuTab') {
             iconName = focused ? 'menu' : 'menu-outline';
           } else {
@@ -92,7 +92,7 @@ function BottomTabNavigator() {
       <Tab.Screen name="HomeTab" component={HomeScreen} options={{ title: 'Home', tabBarLabel: 'Home' }} />
       <Tab.Screen name="ListTab" component={PlaceholderListScreen} options={{ title: 'List', tabBarLabel: 'List' }} />
       <Tab.Screen name="CreateProductTab" component={CreateProductScreen} options={{ title: '', tabBarLabel: '' }} />
-      <Tab.Screen name="BookTab" component={PlaceholderBookScreen} options={{ title: 'Book', tabBarLabel: 'Book' }} />
+      <Tab.Screen name="ProductTab" component={PlaceholderProductScreen} options={{ title: 'Product', tabBarLabel: 'Product' }} />
       <Tab.Screen name="MenuTab" component={MenuScreen} options={{ title: 'Menu', tabBarLabel: 'Menu' }} />
     </Tab.Navigator>
   );
@@ -106,13 +106,13 @@ export default function App() {
   useEffect(() => {
     async function prepare() {
       try {
-        // Check if user is authenticated
+      
         const token = await AsyncStorage.getItem("auth_token")
         setIsAuthenticated(!!token)
       } catch (e) {
         console.warn(e)
       } finally {
-        // Tell the application to render
+      
         setAppIsReady(true)
       }
     }
@@ -122,7 +122,7 @@ export default function App() {
 
   useEffect(() => {
     if (appIsReady) {
-      // Hide the splash screen after 2 seconds
+     
       const timer = setTimeout(() => {
         setShowSplash(false)
         SplashScreen.hideAsync().catch(console.warn)
@@ -151,6 +151,7 @@ export default function App() {
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         <Stack.Screen name="VerifyOtp" component={VerifyOtpScreen} />
         <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+        <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="BottomTabNavigator" component={BottomTabNavigator} options={{ headerShown: false }} />
         <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
       </Stack.Navigator>

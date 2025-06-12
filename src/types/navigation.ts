@@ -15,6 +15,6 @@ export type BottomTabParamList = {
   HomeTab: undefined
   ListTab: undefined
   CreateProductTab: undefined
-  BookTab: undefined
+  ProductTab: undefined
   MenuTab: undefined
 }

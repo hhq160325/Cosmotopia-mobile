@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-const PlaceholderBookScreen = () => {
+const PlaceholderProductScreen = () => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Book Screen</Text>
-      <Text>This is a placeholder for your book-related content.</Text>
+      <Text style={styles.title}>product Screen</Text>
+      <Text>This is a placeholder for your product-related content.</Text>
     </View>
   );
 };
@@ -24,4 +24,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PlaceholderBookScreen; 
+export default PlaceholderProductScreen; 
