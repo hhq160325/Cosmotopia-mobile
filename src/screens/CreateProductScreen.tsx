@@ -109,7 +109,7 @@ const CreateProductScreen = ({ route, navigation }: Props) => {
         throw new Error('Failed to fetch products');
       }
       const data = await response.json();
-      console.log('Fetched products:', data.products);
+      // console.log('Fetched products:', data.products);
       setProducts(data.products || []);
     } catch (error) {
       console.error("Failed to fetch products:", error);
@@ -253,7 +253,7 @@ const CreateProductScreen = ({ route, navigation }: Props) => {
         imageUrls: imageUrlOnly ? [imageUrlOnly] : [],
       };
   
-      console.log('Sending product data:', productData);
+      // console.log('Sending product data:', productData);
   
       const response = await fetch(
         'https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Product/CreateProduct',
@@ -268,9 +268,9 @@ const CreateProductScreen = ({ route, navigation }: Props) => {
         }
       );
   
-      console.log('Response status:', response.status);
+      // console.log('Response status:', response.status);
       const responseText = await response.text();
-      console.log('Response text:', responseText);
+      // console.log('Response text:', responseText);
   
       if (!response.ok) {
         throw new Error(`Failed to create product: ${response.status} ${response.statusText}\nResponse: ${responseText}`);
@@ -278,10 +278,10 @@ const CreateProductScreen = ({ route, navigation }: Props) => {
   
       try {
         const responseData = JSON.parse(responseText);
-        console.log('Product created successfully:', responseData);
+        // console.log('Product created successfully:', responseData);
         showMessage('Product created successfully', false);
       } catch (e) {
-        console.log('Response was not JSON, but product was likely created successfully');
+        // console.log('Response was not JSON, but product was likely created successfully');
         showMessage('Product created successfully', false);
       }
   
@@ -322,7 +322,7 @@ const CreateProductScreen = ({ route, navigation }: Props) => {
         imageUrls: image ? [image.uri] : []
       };
 
-      console.log('Sending update data:', productData);
+      // console.log('Sending update data:', productData);
 
       const response = await fetch(
         `https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Product/UpdateProduct/${productId}`,
@@ -359,14 +359,14 @@ const CreateProductScreen = ({ route, navigation }: Props) => {
   };
 
   const deleteProduct = async (productId: string) => {
-    console.log('Starting delete process for product:', productId);
+    // console.log('Starting delete process for product:', productId);
     try {
       
       const cleanProductId = productId.trim();
-      console.log('Cleaned product ID:', cleanProductId);
+      // console.log('Cleaned product ID:', cleanProductId);
 
       const apiUrl = `https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Product/DeleteProduct/${cleanProductId}`;
-      console.log('Sending delete request to:', apiUrl);
+      // console.log('Sending delete request to:', apiUrl);
       
       const response = await fetch(apiUrl, {
         method: "DELETE",
@@ -376,15 +376,15 @@ const CreateProductScreen = ({ route, navigation }: Props) => {
         },
       });
 
-      console.log('Delete response status:', response.status);
+      // console.log('Delete response status:', response.status);
       const responseText = await response.text();
-      console.log('Delete response text:', responseText);
+      // console.log('Delete response text:', responseText);
 
       if (!response.ok) {
         throw new Error(`Failed to delete product: ${response.status} ${response.statusText}\nResponse: ${responseText}`);
       }
 
-      console.log('Delete successful');
+      // console.log('Delete successful');
       showMessage('Product deleted successfully', false);
       resetForm();
       navigation.dispatch(
@@ -404,7 +404,7 @@ const CreateProductScreen = ({ route, navigation }: Props) => {
   };
 
   const handleProductSelect = (product: any) => {
-    console.log('Product selected:', product);
+    // console.log('Product selected:', product);
     if (!product.productId) {
       showMessage('Invalid product data: missing product ID', true);
       return;
@@ -459,15 +459,15 @@ const CreateProductScreen = ({ route, navigation }: Props) => {
   };
 
   const handleDeleteProduct = async () => {
-    console.log('Delete button clicked, selectedProductId:', selectedProductId);
+    // console.log('Delete button clicked, selectedProductId:', selectedProductId);
     
     if (!selectedProductId) {
-      console.log('No product selected');
+      // console.log('No product selected');
       showMessage('No product selected for deletion', true);
       return;
     }
     
-    console.log('Delete confirmed, proceeding with deletion');
+    // console.log('Delete confirmed, proceeding with deletion');
     setIsSubmitting(true);
     try {
       await deleteProduct(selectedProductId);

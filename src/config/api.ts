@@ -1,6 +1,5 @@
-// API Configuration
 export const API_CONFIG = {
-  BASE_URL: "https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api",
+  BASE_URL: process.env.EXPO_PUBLIC_API_URL || "https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api",
   ENDPOINTS: {
     LOGIN: "/User/Login",
     REGISTER_WITH_OTP: "/User/registerwithotp",
@@ -13,7 +12,7 @@ export const API_CONFIG = {
   TIMEOUT: 10000,
 }
 
-// API Response types
+
 export interface ApiResponse<T = any> {
   success: boolean
   message: string

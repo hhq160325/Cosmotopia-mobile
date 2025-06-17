@@ -42,7 +42,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
   const confirmDelete = async () => {
     setShowConfirmModal(false);
     try {
-      console.log('Preparing to fetch delete API for product ID:', product.productId);
+      // console.log('Preparing to fetch delete API for product ID:', product.productId);
       const response = await fetch(
         `https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Product/DeleteProduct/${product.productId}`,
         {
@@ -54,16 +54,16 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
         }
       );
 
-      console.log('Delete API response status:', response.status);
+      // console.log('Delete API response status:', response.status);
       const responseBody = await response.text();
-      console.log('Delete API response body:', responseBody);
+      // console.log('Delete API response body:', responseBody);
 
       if (!response.ok) {
         console.error('Delete failed with status:', response.status);
         throw new Error(`Failed to delete product: ${response.status} ${response.statusText}. Response: ${responseBody}`);
       }
 
-      console.log('Product deleted successfully:', product.productId);
+      // console.log('Product deleted successfully:', product.productId);
       showMessage('Product deleted successfully', false);
       navigation.reset({
         index: 0,

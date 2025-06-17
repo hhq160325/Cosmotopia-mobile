@@ -1,6 +1,6 @@
 export const Colors = {
-  // Primary brand colors for Cosmotopia
-  primary: "#8B5CF6", // Cosmic purple
+  
+  primary: "#8B5CF6", 
   primaryDark: "#7C3AED",
   secondary: "#F3F4F6",
   background: "#FFFFFF",
@@ -12,14 +12,14 @@ export const Colors = {
   success: "#10B981",
   warning: "#F59E0B",
 
-  // Social colors
+ 
   google: "#DB4437",
   facebook: "#4267B2",
 
-  // Cosmic splash colors
-  splashBar1: "#FF6B6B", // Nebula red
-  splashBar2: "#4ECDC4", // Cosmic teal
-  splashBar3: "#45B7D1", // Galaxy blue
-  splashBar4: "#96CEB4", // Star green
-  splashBar5: "#FFEAA7", // Solar yellow
+  
+  splashBar1: "#FF6B6B", 
+  splashBar2: "#4ECDC4", 
+  splashBar3: "#45B7D1", 
+  splashBar4: "#96CEB4", 
+  splashBar5: "#FFEAA7",
 }

@@ -64,9 +64,9 @@ const PlaceholderListScreen = () => {
         throw new Error('Failed to fetch products');
       }
       const data = await response.json();
-      console.log('Fetched products data:', data);
+      // console.log('Fetched products data:', data);
       const productsData = Array.isArray(data.products) ? data.products.map(cleanProductData) : [];
-      console.log('Processed products:', productsData);
+      // console.log('Processed products:', productsData);
       setProducts(productsData);
     } catch (err: any) {
       console.error('Failed to fetch products:', err);
@@ -79,13 +79,13 @@ const PlaceholderListScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      console.log('PlaceholderListScreen focused, refreshing products...');
+      // console.log('PlaceholderListScreen focused, refreshing products...');
       fetchProducts();
     }, [])
   );
 
   const handleDeleteProduct = async (productId: string) => {
-    console.log('Delete button clicked for product:', productId);
+    // console.log('Delete button clicked for product:', productId);
     
     try {
       const response = await fetch(
@@ -99,15 +99,15 @@ const PlaceholderListScreen = () => {
         }
       );
 
-      console.log('Delete API response status:', response.status);
+      // console.log('Delete API response status:', response.status);
       const responseBody = await response.text();
-      console.log('Delete API response body:', responseBody);
+      // console.log('Delete API response body:', responseBody);
 
       if (!response.ok) {
         throw new Error(`Failed to delete product: ${response.status} ${response.statusText}. Response: ${responseBody}`);
       }
 
-      console.log('Product deleted successfully:', productId);
+      // console.log('Product deleted successfully:', productId);
       showMessage('Product deleted successfully', false);
       fetchProducts(); 
     } catch (err: any) {

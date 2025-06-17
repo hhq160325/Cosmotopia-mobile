@@ -37,7 +37,7 @@ export default function MenuScreen({ navigation }: Props) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       const data = await response.json()
-      console.log("Brand created successfully:", data)
+      // console.log("Brand created successfully:", data)
       Alert.alert("Success", `Brand '${name}' created successfully!`);
       // In a real app, you would also refetch brands here.
     } catch (error) {
