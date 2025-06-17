@@ -13,6 +13,7 @@ import { getEmailError, getPasswordError } from "../utils/validation"
 import { Colors } from "../constants/Colors"
 import { Spacing } from "../constants/Dimensions"
 import { GlobalStyles } from "../styles/GlobalStyles"
+import { CommonActions } from "@react-navigation/native"
 
 type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, "Login">
 
@@ -39,27 +40,72 @@ export default function LoginScreen({ navigation }: Props) {
   }
 
   const handleLogin = async () => {
+    console.log('Login attempt started for email:', email);
+    
     if (!validateForm()) {
+      console.log('Form validation failed:', errors);
       return
     }
 
     setLoading(true)
     try {
+      console.log('Calling login API...');
       const response = await AuthService.login({ email, password })
+      console.log('Login API response received:', response);
 
       // Save auth data
+      console.log('Saving auth data...');
       await StorageService.setAuthToken(response.token)
-      if (response.refreshToken) {
-        await StorageService.setRefreshToken(response.refreshToken)
-      }
-      await StorageService.setUserData(response.user)
-
-      Alert.alert("Thành công", "Đăng nhập thành công!", [{ text: "OK", onPress: () => navigation.navigate("Home") }])
+      // if (response.refreshToken) {
+      //   await StorageService.setRefreshToken(response.refreshToken)
+      // }
+      // await StorageService.setUserData(response.user)
+      console.log('Auth data saved successfully');
+      console.log('Navigating to BottomTabNavigator with HomeTab...');
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'BottomTabNavigator',
+            state: {
+              routes: [
+                {
+                  name: 'HomeTab'
+                }
+              ]
+            }
+          }
+        ],
+      });
+      // Alert.alert("Thành công", "Đăng nhập thành công!", [{ 
+      //   text: "OK", 
+      //   onPress: () => {
+      
+      //     navigation.reset({
+      //       index: 0,
+      //       routes: [
+      //         {
+      //           name: 'BottomTabNavigator',
+      //           state: {
+      //             routes: [
+      //               {
+      //                 name: 'HomeTab'
+      //               }
+      //             ]
+      //           }
+      //         }
+      //       ],
+      //     });
+      //   } 
+      // }])
     } catch (error) {
+      console.error('Login failed:', error);
       const errorMessage = error instanceof Error ? error.message : "Đăng nhập thất bại"
       Alert.alert("Lỗi", errorMessage)
     } finally {
       setLoading(false)
+      
+      console.log('Login process completed');
     }
   }
 

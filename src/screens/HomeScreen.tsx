@@ -21,9 +21,10 @@ type HomeScreenNavigationProp = CompositeNavigationProp<
 
 interface Props {
   navigation: HomeScreenNavigationProp
+  route: any
 }
 
-export default function HomeScreen({ navigation }: Props) {
+export default function HomeScreen({ navigation, route }: Props) {
   const [products, setProducts] = useState<Product[]>([])
   const [brands, setBrands] = useState<any[]>([])
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
@@ -92,6 +93,14 @@ export default function HomeScreen({ navigation }: Props) {
     fetchBrands()
   }, [])
 
+  useEffect(() => {
+    if (route.params?.refresh) {
+      console.log('Refreshing products list...');
+      fetchProducts();
+      navigation.setParams({ refresh: false });
+    }
+  }, [route.params?.refresh])
+
   const createBrand = async (name: string) => {
     try {
       const response = await fetch(
@@ -109,7 +118,7 @@ export default function HomeScreen({ navigation }: Props) {
       }
       const data = await response.json()
       console.log("Brand created successfully:", data)
-      fetchBrands() // Refetch brands to update the list
+      fetchBrands() 
     } catch (error) {
       console.error("Failed to create brand:", error)
     }
@@ -143,7 +152,7 @@ export default function HomeScreen({ navigation }: Props) {
         } as any)
       } else {
         console.warn("Product image details are incomplete or missing.")
-        // Optionally, handle the case where image is missing, e.g., throw an error or use a default image.
+   
       }
 
       const response = await fetch(
@@ -151,7 +160,7 @@ export default function HomeScreen({ navigation }: Props) {
         {
           method: "POST",
           headers: {
-            // 'Content-Type': 'multipart/form-data' is usually set automatically when using FormData
+           
           },
           body: formData,
         }
@@ -162,7 +171,7 @@ export default function HomeScreen({ navigation }: Props) {
       }
       const data = await response.json()
       console.log("Product created successfully:", data)
-      fetchProducts() // Refetch products to update the list
+      fetchProducts() 
     } catch (error) {
       console.error("Failed to create product:", error)
     }

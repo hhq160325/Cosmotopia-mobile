@@ -86,6 +86,17 @@ export default function MenuScreen({ navigation }: Props) {
         style={styles.button}
       />
 
+      
+
+      <CustomButton
+        title="Profile"
+        onPress={() => {
+          navigation.navigate('Profile'); // Navigate to the Profile screen
+        }}
+        variant="primary"
+        style={styles.button}
+      />
+
       <CustomButton title="Đăng xuất" onPress={handleLogout} variant="secondary" style={styles.button} />
     </View>
   )

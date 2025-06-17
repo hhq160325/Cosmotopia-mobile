@@ -24,6 +24,8 @@ import PlaceholderListScreen from "./src/screens/PlaceholderListScreen"
 import CreateProductScreen from "./src/screens/CreateProductScreen"
 import PlaceholderProductScreen from "./src/screens/PlaceholderProductScreen"
 import MenuScreen from "./src/screens/MenuScreen"
+import OrderDetailScreen from "./src/screens/OrderDetailScreen"
+import ProfileScreen from "./src/screens/ProfileScreen"
 
 // Types
 import type { RootStackParamList, BottomTabParamList } from "./src/types/navigation"
@@ -154,6 +156,9 @@ export default function App() {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="BottomTabNavigator" component={BottomTabNavigator} options={{ headerShown: false }} />
         <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
+        <Stack.Screen name="CreateProduct" component={CreateProductScreen} />
+        <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   )

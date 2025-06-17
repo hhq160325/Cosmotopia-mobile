@@ -1,4 +1,5 @@
 import { Product } from "./products.type"
+import { NavigatorScreenParams } from "@react-navigation/native"
 
 export type RootStackParamList = {
   Login: undefined
@@ -8,11 +9,14 @@ export type RootStackParamList = {
   ResetPassword: { email: string }
   Home: undefined
   ProductDetail: { product: Product }
-  BottomTabNavigator: undefined
+  CreateProduct: { product?: Product; mode?: 'edit' | 'create' }
+  BottomTabNavigator: NavigatorScreenParams<BottomTabParamList> | undefined
+  OrderDetail: undefined
+  Profile: undefined
 }
 
 export type BottomTabParamList = {
-  HomeTab: undefined
+  HomeTab: { refresh?: boolean } | undefined
   ListTab: undefined
   CreateProductTab: undefined
   ProductTab: undefined
