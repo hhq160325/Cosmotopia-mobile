@@ -125,6 +125,58 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
       )}
       <ProductDetailCard product={product} />
 
+      {/* Add to Cart and Payment Buttons */}
+      <View style={styles.actionRow}>
+        <TouchableOpacity
+          style={[styles.actionMainButton, product.stockQuantity <= 0 && styles.disabledButton]}
+          onPress={async () => {
+            if (product.stockQuantity <= 0) return;
+            try {
+              const response = await fetch('https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/cart/add', {
+                method: 'POST',
+                headers: {
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ productId: product.productId, quantity: 1 })
+              });
+              const data = await response.json();
+              if (!response.ok) throw new Error(data.message || 'Failed to add to cart');
+              showMessage('Added to cart!', false);
+            } catch (error: any) {
+              showMessage(error.message || 'Failed to add to cart', true);
+            }
+          }}
+          disabled={product.stockQuantity <= 0}
+        >
+          <Text style={styles.actionButtonText}>Add to Cart</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.actionMainButton, product.stockQuantity <= 0 && styles.disabledButton]}
+          onPress={async () => {
+            if (product.stockQuantity <= 0) return;
+            try {
+              const response = await fetch('https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Order', {
+                method: 'POST',
+                headers: {
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ productId: product.productId, quantity: 1 })
+              });
+              const data = await response.json();
+              if (!response.ok) throw new Error(data.message || 'Payment failed');
+              showMessage('Payment successful!', false);
+            } catch (error: any) {
+              showMessage(error.message || 'Payment failed', true);
+            }
+          }}
+          disabled={product.stockQuantity <= 0}
+        >
+          <Text style={styles.actionButtonText}>Payment</Text>
+        </TouchableOpacity>
+      </View>
+
       <Modal
         visible={showConfirmModal}
         transparent={true}
@@ -252,5 +304,30 @@ const styles = StyleSheet.create({
   },
   deleteButtonText: {
     color: Colors.background,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginVertical: Spacing.sm,
+    gap: 12,
+  },
+  actionMainButton: {
+    flex: 1,
+    backgroundColor: Colors.primary,
+    paddingVertical: 12,
+    marginHorizontal: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+    opacity: 1,
+  },
+  actionButtonText: {
+    color: Colors.background,
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  disabledButton: {
+    backgroundColor: Colors.border,
+    opacity: 0.5,
   },
 }); 

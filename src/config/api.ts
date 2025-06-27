@@ -1,5 +1,7 @@
+import { API_BASE_URL, API_TIMEOUT } from '@env'
+
 export const API_CONFIG = {
-  BASE_URL: process.env.EXPO_PUBLIC_API_URL || "https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api",
+  BASE_URL: API_BASE_URL || "https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api",
   ENDPOINTS: {
     LOGIN: "/User/Login",
     REGISTER_WITH_OTP: "/User/registerwithotp",
@@ -9,7 +11,7 @@ export const API_CONFIG = {
     NEW_PASSWORD: "/User/newPass",
     GET_ALL_PRODUCTS: "/Product/GetAllProduct",
   },
-  TIMEOUT: 10000,
+  TIMEOUT: Number(API_TIMEOUT) || 10000,
 }
 
 

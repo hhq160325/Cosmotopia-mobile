@@ -1,13 +1,16 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Product, Brand, Category } from '../types/products.type'; 
+import { Product as BaseProduct, Brand, Category } from '../types/products.type'; 
 import { CommonActions, useNavigation, useFocusEffect } from '@react-navigation/native'; 
 import { Colors } from '../constants/Colors'; 
 import { Spacing } from '../constants/Dimensions'; 
+import { StorageService } from '../services/storageService';
 
+// Extend Product type for cart items to include quantity
+type CartProduct = BaseProduct & { quantity?: number };
 
-const cleanProductData = (product: any): Product => ({
+const cleanProductData = (product: any): BaseProduct => ({
   productId: String(product.productId || ''),
   name: String(product.name || ''),
   description: String(product.description || ''),
@@ -40,7 +43,7 @@ const cleanCategoryData = (category: any): Category => ({
 
 const PlaceholderListScreen = () => {
   const navigation = useNavigation();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<CartProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -57,20 +60,38 @@ const PlaceholderListScreen = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
+      const token = await StorageService.getAuthToken();
+      if (!token) throw new Error('No authentication token found');
       const response = await fetch(
-        'https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Product/GetAllProduct'
+        'https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/cart',
+        {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        }
       );
       if (!response.ok) {
-        throw new Error('Failed to fetch products');
+        throw new Error('Failed to fetch cart');
       }
       const data = await response.json();
-      // console.log('Fetched products data:', data);
-      const productsData = Array.isArray(data.products) ? data.products.map(cleanProductData) : [];
-      // console.log('Processed products:', productsData);
+      console.log('Fetched cart data:', data);
+      // Assuming data.cartItems or data.items is the array of cart products
+      const cartItems = Array.isArray(data.cartItems) ? data.cartItems : (Array.isArray(data.items) ? data.items : []);
+      // If cart item structure is different, map to Product type
+      const productsData = cartItems.map((item: any) => {
+        // If item.product exists, use it, else fallback to item
+        const product = item.product || item;
+        return {
+          ...cleanProductData(product),
+          quantity: item.quantity || 1, // Optionally add quantity if needed
+        };
+      });
       setProducts(productsData);
     } catch (err: any) {
-      console.error('Failed to fetch products:', err);
-      setError(err.message || 'Failed to load products. Please try again.');
+      console.error('Failed to fetch cart:', err);
+      setError(err.message || 'Failed to load cart. Please try again.');
       setProducts([]);
     } finally {
       setLoading(false);
@@ -116,7 +137,57 @@ const PlaceholderListScreen = () => {
     }
   };
 
-  const renderProductItem = ({ item }: { item: Product }) => (
+  const handleRemoveFromCart = async (productId: string) => {
+    try {
+      const token = await StorageService.getAuthToken();
+      if (!token) throw new Error('No authentication token found');
+      const response = await fetch(
+        `https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/cart/remove/${productId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error('Failed to remove from cart');
+      }
+      showMessage('Removed from cart', false);
+      fetchProducts();
+    } catch (err: any) {
+      showMessage(err.message || 'Failed to remove from cart', true);
+    }
+  };
+
+  const handlePayment = async (productId: string, quantity: number) => {
+    try {
+      const token = await StorageService.getAuthToken();
+      if (!token) throw new Error('No authentication token found');
+      const response = await fetch(
+        'https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Order',
+        {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ productId, quantity })
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Payment failed');
+      showMessage('Payment successful!', false);
+      fetchProducts();
+    } catch (err: any) {
+      showMessage(err.message || 'Payment failed', true);
+    }
+  };
+
+  const renderProductItem = ({ item }: { item: CartProduct }) => (
     <View style={styles.productItem}>
       <View style={styles.productImageContainer}>
         <Image
@@ -130,6 +201,22 @@ const PlaceholderListScreen = () => {
         <Text style={styles.productDescription} numberOfLines={2}>{item.description}</Text>
         <Text style={styles.productPrice}>Price: {item.price.toLocaleString()} VND</Text>
         <Text style={styles.productStock}>Stock: {item.stockQuantity}</Text>
+        <Text style={styles.productStock}>Quantity: {item.quantity || 1}</Text>
+        <View style={styles.cartActionRow}>
+          <TouchableOpacity
+            style={[styles.cartActionButton, item.stockQuantity <= 0 && styles.disabledButton]}
+            onPress={() => handlePayment(item.productId, item.quantity || 1)}
+            disabled={item.stockQuantity <= 0}
+          >
+            <Text style={styles.cartActionButtonText}>Payment</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.cartActionButton}
+            onPress={() => handleRemoveFromCart(item.productId)}
+          >
+            <Text style={styles.cartActionButtonText}>Remove</Text>
+          </TouchableOpacity>
+        </View>
       </View>
       <View style={styles.actionButtons}>
         <TouchableOpacity 
@@ -279,6 +366,28 @@ const styles = StyleSheet.create({
   messageText: {
     color: Colors.background,
     fontWeight: 'bold',
+  },
+  cartActionRow: {
+    flexDirection: 'row',
+    marginTop: 8,
+    gap: 8,
+  },
+  cartActionButton: {
+    flex: 1,
+    backgroundColor: Colors.primary,
+    paddingVertical: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginHorizontal: 4,
+  },
+  cartActionButtonText: {
+    color: Colors.background,
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  disabledButton: {
+    backgroundColor: Colors.border,
+    opacity: 0.5,
   },
 });
 
