@@ -6,6 +6,7 @@ import { CommonActions, useNavigation, useFocusEffect } from '@react-navigation/
 import { Colors } from '../constants/Colors'; 
 import { Spacing } from '../constants/Dimensions'; 
 import { StorageService } from '../services/storageService';
+import { fetchCartItems } from '../services/cartService';
 
 // Extend Product type for cart items to include quantity
 type CartProduct = BaseProduct & { quantity?: number };
@@ -61,10 +62,17 @@ const PlaceholderListScreen = () => {
     setLoading(true);
     try {
       const token = await StorageService.getAuthToken();
-      if (!token) throw new Error('No authentication token found');
+      if (!token) {
+        setError('Please login to view your cart');
+        setProducts([]);
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(
-        'https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/cart',
+        'https://localhost:7191/api/cart',
         {
+          method: 'GET',
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -72,13 +80,26 @@ const PlaceholderListScreen = () => {
           },
         }
       );
-      if (!response.ok) {
-        throw new Error('Failed to fetch cart');
+
+      if (response.status === 401) {
+        // Token expired or invalid
+        await StorageService.clearAuthData();
+        setError('Session expired. Please login again.');
+        setProducts([]);
+        setLoading(false);
+        return;
       }
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch cart: ${response.status} ${response.statusText}`);
+      }
+
       const data = await response.json();
       console.log('Fetched cart data:', data);
+      
       // Assuming data.cartItems or data.items is the array of cart products
       const cartItems = Array.isArray(data.cartItems) ? data.cartItems : (Array.isArray(data.items) ? data.items : []);
+      
       // If cart item structure is different, map to Product type
       const productsData = cartItems.map((item: any) => {
         // If item.product exists, use it, else fallback to item
@@ -89,6 +110,7 @@ const PlaceholderListScreen = () => {
         };
       });
       setProducts(productsData);
+      setError(null);
     } catch (err: any) {
       console.error('Failed to fetch cart:', err);
       setError(err.message || 'Failed to load cart. Please try again.');
@@ -110,7 +132,7 @@ const PlaceholderListScreen = () => {
     
     try {
       const response = await fetch(
-        `https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Product/DeleteProduct/${productId}`,
+        `https://localhost:7191/api/Product/DeleteProduct/${productId}`,
         {
           method: 'DELETE',
           headers: {
@@ -142,7 +164,7 @@ const PlaceholderListScreen = () => {
       const token = await StorageService.getAuthToken();
       if (!token) throw new Error('No authentication token found');
       const response = await fetch(
-        `https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/cart/remove/${productId}`,
+        `https://localhost:7191/api/cart/remove/${productId}`,
         {
           method: 'DELETE',
           headers: {
@@ -167,7 +189,7 @@ const PlaceholderListScreen = () => {
       const token = await StorageService.getAuthToken();
       if (!token) throw new Error('No authentication token found');
       const response = await fetch(
-        'https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Order',
+        'https://localhost:7191/api/Order',
         {
           method: 'POST',
           headers: {
@@ -188,43 +210,26 @@ const PlaceholderListScreen = () => {
   };
 
   const renderProductItem = ({ item }: { item: CartProduct }) => (
-    <View style={styles.productItem}>
-      <View style={styles.productImageContainer}>
-        <Image
-          source={{ uri: item.imageUrls?.[0] || 'https://via.placeholder.com/80' }}
-          style={styles.productImage}
-          resizeMode="cover"
-        />
-      </View>
-      <View style={styles.productInfo}>
-        <Text style={styles.productName}>{item.name}</Text>
-        <Text style={styles.productDescription} numberOfLines={2}>{item.description}</Text>
-        <Text style={styles.productPrice}>Price: {item.price.toLocaleString()} VND</Text>
-        <Text style={styles.productStock}>Stock: {item.stockQuantity}</Text>
-        <Text style={styles.productStock}>Quantity: {item.quantity || 1}</Text>
-        <View style={styles.cartActionRow}>
-          <TouchableOpacity
-            style={[styles.cartActionButton, item.stockQuantity <= 0 && styles.disabledButton]}
-            onPress={() => handlePayment(item.productId, item.quantity || 1)}
-            disabled={item.stockQuantity <= 0}
-          >
-            <Text style={styles.cartActionButtonText}>Payment</Text>
+    <View style={styles.cartCard}>
+      <Image
+        source={{ uri: item.imageUrls?.[0] || 'https://via.placeholder.com/120' }}
+        style={styles.cartImage}
+        resizeMode="cover"
+      />
+      <View style={styles.cartInfo}>
+        <Text style={styles.cartName}>{item.name}</Text>
+        <Text style={styles.cartDesc} numberOfLines={2}>{item.description}</Text>
+        <Text style={styles.cartPrice}>{item.price?.toLocaleString()} VND</Text>
+        <Text style={styles.cartQty}>Số lượng: {item.quantity}</Text>
+        <View style={styles.cartActions}>
+          <TouchableOpacity style={styles.payButton} onPress={() => handlePayment(item.productId, item.quantity || 1)}>
+            <Ionicons name="card-outline" size={18} color="#fff" />
+            <Text style={styles.payButtonText}>Thanh toán</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.cartActionButton}
-            onPress={() => handleRemoveFromCart(item.productId)}
-          >
-            <Text style={styles.cartActionButtonText}>Remove</Text>
+          <TouchableOpacity style={styles.removeButton} onPress={() => handleRemoveFromCart(item.productId)}>
+            <Ionicons name="trash-outline" size={18} color="#fff" />
           </TouchableOpacity>
         </View>
-      </View>
-      <View style={styles.actionButtons}>
-        <TouchableOpacity 
-          style={styles.deleteButton}
-          onPress={() => handleDeleteProduct(item.productId)}
-        >
-          <Ionicons name="trash-outline" size={24} color={Colors.error} />
-        </TouchableOpacity>
       </View>
     </View>
   );
@@ -241,13 +246,26 @@ const PlaceholderListScreen = () => {
     return (
       <View style={styles.centered}>
         <Text style={styles.errorText}>{error}</Text>
+        {(error.includes('login') || error.includes('Login')) && (
+          <TouchableOpacity
+            style={styles.loginButton}
+            onPress={() => navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+              })
+            )}
+          >
+            <Text style={styles.loginButtonText}>Go to Login</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Products</Text>
+    <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+      <Text style={styles.title}>Giỏ hàng của bạn</Text>
       {message && (
         <View style={[styles.messageContainer, isErrorMessage ? styles.errorMessage : styles.successMessage]}>
           <Text style={styles.messageText}>{message}</Text>
@@ -257,21 +275,84 @@ const PlaceholderListScreen = () => {
         data={products}
         renderItem={renderProductItem}
         keyExtractor={(item) => item.productId}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={{ padding: 16 }}
       />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
+  cartCard: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    marginBottom: 18,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
     alignItems: 'center',
+  },
+  cartImage: {
+    width: 90,
+    height: 90,
+    borderRadius: 16,
+    marginRight: 16,
+    backgroundColor: '#f3f3f3',
+  },
+  cartInfo: {
+    flex: 1,
+  },
+  cartName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#222',
+    marginBottom: 4,
+  },
+  cartDesc: {
+    fontSize: 14,
+    color: '#888',
+    marginBottom: 4,
+  },
+  cartPrice: {
+    fontSize: 16,
+    color: '#8B5CF6',
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  cartQty: {
+    fontSize: 14,
+    color: '#444',
+    marginBottom: 8,
+  },
+  cartActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  payButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#8B5CF6',
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 24,
+    marginRight: 8,
+  },
+  payButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    marginLeft: 6,
+    fontSize: 15,
+  },
+  removeButton: {
+    backgroundColor: '#EF4444',
+    padding: 10,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     fontSize: 24,
@@ -281,63 +362,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
-  listContainer: {
-    padding: 16,
-  },
-  productItem: {
-    backgroundColor: '#fff',
-    padding: 16,
-    marginBottom: 16,
-    borderRadius: 12,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  productImageContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    overflow: 'hidden',
-    marginRight: 12,
-  },
-  productImage: {
-    width: '100%',
-    height: '100%',
-  },
-  productInfo: {
+  centered: {
     flex: 1,
-  },
-  productName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  productDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  productPrice: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2196F3',
-  },
-  productStock: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
-  },
-  actionButtons: {
-    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 12,
-  },
-  deleteButton: {
-    padding: 8,
   },
   errorText: {
     color: 'red',
@@ -367,27 +395,17 @@ const styles = StyleSheet.create({
     color: Colors.background,
     fontWeight: 'bold',
   },
-  cartActionRow: {
-    flexDirection: 'row',
-    marginTop: 8,
-    gap: 8,
-  },
-  cartActionButton: {
-    flex: 1,
+  loginButton: {
     backgroundColor: Colors.primary,
-    paddingVertical: 8,
-    borderRadius: 6,
-    alignItems: 'center',
-    marginHorizontal: 4,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 16,
   },
-  cartActionButtonText: {
+  loginButtonText: {
     color: Colors.background,
     fontWeight: 'bold',
-    fontSize: 14,
-  },
-  disabledButton: {
-    backgroundColor: Colors.border,
-    opacity: 0.5,
+    fontSize: 16,
   },
 });
 

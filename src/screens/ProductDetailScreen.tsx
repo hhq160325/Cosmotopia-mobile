@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, SafeAreaView, TouchableOpacity, Text, Modal } from 'react-native';
+import { View, StyleSheet, SafeAreaView, TouchableOpacity, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
 import ProductDetailCard from '../components/ProductDetailCard';
 import { Colors } from '../constants/Colors';
 import { Spacing } from '../constants/Dimensions';
-import { CustomButton } from '../components/CustomButton';
 import { Product } from '../types/products.type';
 import { CommonActions } from '@react-navigation/native';
+import { StorageService } from '../services/storageService';
 
 type ProductDetailScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ProductDetail'>;
 
@@ -25,7 +25,8 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
   const { product } = route.params;
   const [message, setMessage] = useState<string | null>(null);
   const [isErrorMessage, setIsErrorMessage] = useState<boolean>(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [quantity, setQuantity] = useState<number>(1);
+  const [isAddingToCart, setIsAddingToCart] = useState<boolean>(false);
 
   const showMessage = (msg: string, isError: boolean = false) => {
     setMessage(msg);
@@ -35,36 +36,92 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
     }, 3000);
   };
 
-  const handleDelete = async () => {
-    setShowConfirmModal(true);
-  };
+  const handleAddToCart = async () => {
+    if (product.stockQuantity <= 0) {
+      showMessage('Product is out of stock', true);
+      return;
+    }
 
-  const confirmDelete = async () => {
-    setShowConfirmModal(false);
+    if (quantity > product.stockQuantity) {
+      showMessage(`Only ${product.stockQuantity} items available in stock`, true);
+      return;
+    }
+
+    setIsAddingToCart(true);
     try {
-      // console.log('Preparing to fetch delete API for product ID:', product.productId);
-      const response = await fetch(
-        `https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Product/DeleteProduct/${product.productId}`,
-        {
-          method: "DELETE",
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      // console.log('Delete API response status:', response.status);
-      const responseBody = await response.text();
-      // console.log('Delete API response body:', responseBody);
-
-      if (!response.ok) {
-        console.error('Delete failed with status:', response.status);
-        throw new Error(`Failed to delete product: ${response.status} ${response.statusText}. Response: ${responseBody}`);
+      const token = await StorageService.getAuthToken();
+      if (!token) {
+        showMessage('Please login to add items to cart', true);
+        return;
       }
 
-      // console.log('Product deleted successfully:', product.productId);
-      showMessage('Product deleted successfully', false);
+      const response = await fetch('https://localhost:7191/api/cart/add', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ 
+          productId: product.productId, 
+          quantity: quantity 
+        })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to add to cart');
+      }
+
+      showMessage(`Added ${quantity} item(s) to cart!`, false);
+      
+      // Reset quantity after successful add
+      setQuantity(1);
+      
+    } catch (error: any) {
+      console.error('Add to cart error:', error);
+      showMessage(error.message || 'Failed to add to cart', true);
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
+
+  const handlePayment = async () => {
+    if (product.stockQuantity <= 0) {
+      showMessage('Product is out of stock', true);
+      return;
+    }
+
+    try {
+      const token = await StorageService.getAuthToken();
+      if (!token) {
+        showMessage('Please login to make payment', true);
+        return;
+      }
+
+      const response = await fetch('https://localhost:7191/api/Order', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ 
+          productId: product.productId, 
+          quantity: quantity 
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Payment failed');
+      }
+      
+      showMessage('Payment successful!', false);
+      
+      // Navigate back to home and refresh
       navigation.reset({
         index: 0,
         routes: [
@@ -81,17 +138,23 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
           }
         ],
       });
+      
     } catch (error: any) {
-      console.error("Failed to delete product (full error object):", error);
-      showMessage(error.message || 'Failed to delete product. Please try again.', true);
+      console.error('Payment error:', error);
+      showMessage(error.message || 'Payment failed', true);
     }
   };
 
-  const handleUpdate = () => {
-    navigation.navigate('CreateProduct', { 
-      product: product,
-      mode: 'edit'
-    });
+  const increaseQuantity = () => {
+    if (quantity < product.stockQuantity) {
+      setQuantity(quantity + 1);
+    }
+  };
+
+  const decreaseQuantity = () => {
+    if (quantity > 1) {
+      setQuantity(quantity - 1);
+    }
   };
 
   return (
@@ -103,107 +166,66 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
         >
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </TouchableOpacity>
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={styles.updateButton}
-            onPress={handleUpdate}
-          >
-            <Ionicons name="create-outline" size={20} color={Colors.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={handleDelete}
-          >
-            <Ionicons name="trash-outline" size={20} color={Colors.error} />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.headerTitle}>Product Details</Text>
+        <View style={styles.placeholder} />
       </View>
+      
       {message && (
         <View style={[styles.messageContainer, isErrorMessage ? styles.errorMessage : styles.successMessage]}>
           <Text style={styles.messageText}>{message}</Text>
         </View>
       )}
+      
       <ProductDetailCard product={product} />
+
+      {/* Quantity Selector */}
+      <View style={styles.quantityContainer}>
+        <Text style={styles.quantityLabel}>Quantity:</Text>
+        <View style={styles.quantitySelector}>
+          <TouchableOpacity
+            style={[styles.quantityButton, quantity <= 1 && styles.quantityButtonDisabled]}
+            onPress={decreaseQuantity}
+            disabled={quantity <= 1}
+          >
+            <Ionicons name="remove" size={20} color={quantity <= 1 ? Colors.textSecondary : Colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.quantityText}>{quantity}</Text>
+          <TouchableOpacity
+            style={[styles.quantityButton, quantity >= product.stockQuantity && styles.quantityButtonDisabled]}
+            onPress={increaseQuantity}
+            disabled={quantity >= product.stockQuantity}
+          >
+            <Ionicons name="add" size={20} color={quantity >= product.stockQuantity ? Colors.textSecondary : Colors.text} />
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.stockInfo}>
+          {product.stockQuantity > 0 ? `${product.stockQuantity} available` : 'Out of stock'}
+        </Text>
+      </View>
 
       {/* Add to Cart and Payment Buttons */}
       <View style={styles.actionRow}>
         <TouchableOpacity
-          style={[styles.actionMainButton, product.stockQuantity <= 0 && styles.disabledButton]}
-          onPress={async () => {
-            if (product.stockQuantity <= 0) return;
-            try {
-              const response = await fetch('https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/cart/add', {
-                method: 'POST',
-                headers: {
-                  'Accept': 'application/json',
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ productId: product.productId, quantity: 1 })
-              });
-              const data = await response.json();
-              if (!response.ok) throw new Error(data.message || 'Failed to add to cart');
-              showMessage('Added to cart!', false);
-            } catch (error: any) {
-              showMessage(error.message || 'Failed to add to cart', true);
-            }
-          }}
-          disabled={product.stockQuantity <= 0}
+          style={[
+            styles.actionMainButton, 
+            (product.stockQuantity <= 0 || isAddingToCart) && styles.disabledButton
+          ]}
+          onPress={handleAddToCart}
+          disabled={product.stockQuantity <= 0 || isAddingToCart}
         >
-          <Text style={styles.actionButtonText}>Add to Cart</Text>
+          <Text style={styles.actionButtonText}>
+            {isAddingToCart ? 'Adding...' : 'Add to Cart'}
+          </Text>
         </TouchableOpacity>
+        
         <TouchableOpacity
           style={[styles.actionMainButton, product.stockQuantity <= 0 && styles.disabledButton]}
-          onPress={async () => {
-            if (product.stockQuantity <= 0) return;
-            try {
-              const response = await fetch('https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Order', {
-                method: 'POST',
-                headers: {
-                  'Accept': 'application/json',
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ productId: product.productId, quantity: 1 })
-              });
-              const data = await response.json();
-              if (!response.ok) throw new Error(data.message || 'Payment failed');
-              showMessage('Payment successful!', false);
-            } catch (error: any) {
-              showMessage(error.message || 'Payment failed', true);
-            }
-          }}
+          onPress={handlePayment}
           disabled={product.stockQuantity <= 0}
         >
-          <Text style={styles.actionButtonText}>Payment</Text>
+          <Text style={styles.actionButtonText}>Buy Now</Text>
         </TouchableOpacity>
       </View>
-
-      <Modal
-        visible={showConfirmModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowConfirmModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Confirm Delete</Text>
-            <Text style={styles.modalMessage}>Are you sure you want to delete this product?</Text>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowConfirmModal(false)}
-              >
-                <Text style={styles.buttonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.deleteConfirmButton]}
-                onPress={confirmDelete}
-              >
-                <Text style={[styles.buttonText, styles.deleteButtonText]}>Delete</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -225,16 +247,14 @@ const styles = StyleSheet.create({
   backButton: {
     padding: Spacing.xs,
   },
-  actionButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.text,
   },
-  updateButton: {
-    padding: Spacing.xs,
-    marginRight: Spacing.xs,
-  },
-  deleteButton: {
-    padding: Spacing.xs,
+  placeholder: {
+    width: 24,
+    height: 24,
   },
   messageContainer: {
     padding: Spacing.xs,
@@ -255,55 +275,48 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 12,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: Colors.background,
-    borderRadius: 8,
-    padding: 16,
-    width: '80%',
-    maxWidth: 320,
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: Colors.text,
-  },
-  modalMessage: {
-    fontSize: 14,
-    marginBottom: 16,
-    color: Colors.text,
-  },
-  modalButtons: {
+  quantityContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    gap: 8,
-  },
-  modalButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    borderRadius: 4,
-    minWidth: 70,
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    backgroundColor: Colors.surface,
+    marginHorizontal: Spacing.md,
+    marginVertical: Spacing.sm,
+    borderRadius: 8,
   },
-  cancelButton: {
-    backgroundColor: Colors.border,
+  quantityLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
   },
-  deleteConfirmButton: {
-    backgroundColor: Colors.error,
+  quantitySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+    borderRadius: 20,
+    paddingHorizontal: Spacing.sm,
   },
-  buttonText: {
-    color: Colors.background,
-    fontWeight: 'bold',
+  quantityButton: {
+    padding: Spacing.sm,
+    borderRadius: 20,
+  },
+  quantityButtonDisabled: {
+    opacity: 0.5,
+  },
+  quantityText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+    paddingHorizontal: Spacing.md,
+    minWidth: 30,
+    textAlign: 'center',
+  },
+  stockInfo: {
     fontSize: 12,
-  },
-  deleteButtonText: {
-    color: Colors.background,
+    color: Colors.textSecondary,
+    fontStyle: 'italic',
   },
   actionRow: {
     flexDirection: 'row',

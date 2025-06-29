@@ -21,7 +21,7 @@ import ResetPasswordScreen from "./src/screens/ResetPasswordScreen"
 import HomeScreen from "./src/screens/HomeScreen"
 import ProductDetailScreen from "./src/screens/ProductDetailScreen"
 import PlaceholderListScreen from "./src/screens/PlaceholderListScreen"
-import CreateProductScreen from "./src/screens/CreateProductScreen"
+import ScannerScreen from "./src/screens/ScannerScreen"
 import PlaceholderProductScreen from "./src/screens/PlaceholderProductScreen"
 import MenuScreen from "./src/screens/MenuScreen"
 import OrderDetailScreen from "./src/screens/OrderDetailScreen"
@@ -53,7 +53,7 @@ function BottomTabNavigator() {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'ListTab') {
             iconName = focused ? 'list' : 'list-outline';
-          } else if (route.name === 'CreateProductTab') {
+          } else if (route.name === 'ScannerTab') {
             return (
               <View style={{
                 backgroundColor: 'black',
@@ -69,7 +69,7 @@ function BottomTabNavigator() {
                 shadowRadius: 4.65,
                 elevation: 8,
               }}>
-                <Ionicons name="add" size={30} color="white" />
+                <Ionicons name="camera" size={30} color="white" />
               </View>
             );
           } else if (route.name === 'ProductTab') {
@@ -93,7 +93,7 @@ function BottomTabNavigator() {
     >
       <Tab.Screen name="HomeTab" component={HomeScreen} options={{ title: 'Home', tabBarLabel: 'Home' }} />
       <Tab.Screen name="ListTab" component={PlaceholderListScreen} options={{ title: 'List', tabBarLabel: 'List' }} />
-      <Tab.Screen name="CreateProductTab" component={CreateProductScreen} options={{ title: '', tabBarLabel: '' }} />
+      <Tab.Screen name="ScannerTab" component={ScannerScreen} options={{ title: '', tabBarLabel: '' }} />
       <Tab.Screen name="ProductTab" component={PlaceholderProductScreen} options={{ title: 'Product', tabBarLabel: 'Product' }} />
       <Tab.Screen name="MenuTab" component={MenuScreen} options={{ title: 'Menu', tabBarLabel: 'Menu' }} />
     </Tab.Navigator>
@@ -156,7 +156,6 @@ export default function App() {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="BottomTabNavigator" component={BottomTabNavigator} options={{ headerShown: false }} />
         <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
-        <Stack.Screen name="CreateProduct" component={CreateProductScreen} />
         <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
       </Stack.Navigator>

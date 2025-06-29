@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Image, Alert, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, Platform, ActivityIndicator, Dimensions } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { CustomButton } from '../components/CustomButton';
-import { Brand, Category, Product } from '../types/products.type';
+import { Product } from '../types/products.type';
 import { Colors } from '../constants/Colors';
 import { Spacing } from '../constants/Dimensions';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
 import { CommonActions } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
+import { StorageService } from '../services/storageService';
 
-type CreateProductScreenNavigationProp = StackNavigationProp<RootStackParamList, 'CreateProduct'>;
+type ScannerScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Scanner'>;
 
 interface Props {
-  navigation: CreateProductScreenNavigationProp;
+  navigation: ScannerScreenNavigationProp;
   route: {
     params?: {
       product?: Product;
@@ -22,22 +23,27 @@ interface Props {
   };
 }
 
-const CreateProductScreen = ({ route, navigation }: Props) => {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [price, setPrice] = useState('');
-  const [stockQuantity, setStockQuantity] = useState('');
-  const [commissionRate, setCommissionRate] = useState('');
-  const [selectedBrand, setSelectedBrand] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [image, setImage] = useState<{ uri: string; type: string; name: string } | null>(null);
-  const [brands, setBrands] = useState<Brand[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [newBrandName, setNewBrandName] = useState('');
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
-  const [products, setProducts] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+interface AIAnalysis {
+  skinTone: string;
+  skinType: string;
+  faceShape: string;
+  recommendations: string[];
+}
+
+interface RecommendedProduct {
+  product: Product;
+  reason: string;
+  matchScore: number;
+}
+
+const { width: screenWidth } = Dimensions.get('window');
+
+const ScannerScreen = ({ navigation }: Props) => {
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis | null>(null);
+  const [recommendedProducts, setRecommendedProducts] = useState<RecommendedProduct[]>([]);
+  const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [isErrorMessage, setIsErrorMessage] = useState<boolean>(false);
 
@@ -46,147 +52,39 @@ const CreateProductScreen = ({ route, navigation }: Props) => {
     setIsErrorMessage(isError);
     setTimeout(() => {
       setMessage(null);
-    }, 3000); 
+    }, 3000);
   };
 
   useEffect(() => {
-    fetchBrands();
-    fetchCategories();
-    fetchProducts();
+    fetchAvailableProducts();
+  }, []);
 
-
-    if (route.params?.product && route.params?.mode === 'edit') {
-      const product = route.params.product;
-      setSelectedProductId(product.productId);
-      setName(product.name);
-      setDescription(product.description);
-      setPrice(product.price.toString());
-      setStockQuantity(product.stockQuantity.toString());
-      setCommissionRate(product.commissionRate?.toString() || '');
-      setSelectedBrand(product.brandId);
-      setSelectedCategory(product.categoryId);
-      if (product.imageUrls && product.imageUrls.length > 0) {
-        setImage({
-          uri: product.imageUrls[0],
-          type: 'image/jpeg',
-          name: 'product-image.jpg'
-        });
-      }
-    }
-  }, [route.params]);
-
-  const fetchBrands = async () => {
+  const fetchAvailableProducts = async () => {
     try {
-      const response = await fetch(
-        "https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Brand/GetAllBrand?page=1&pageSize=10"
-      );
-      const data = await response.json();
-      setBrands(data.brands || []);
-    } catch (error) {
-      console.error("Failed to fetch brands:", error);
-    }
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch(
-        "https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Category/GetAllCategory"
-      );
-      const data = await response.json();
-      setCategories(data.categories || []);
-    } catch (error) {
-      console.error("Failed to fetch categories:", error);
-    }
-  };
-
-  const fetchProducts = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(
-        "https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Product/GetAllProduct"
-      );
+      const response = await fetch('https://localhost:7191/api/Product/GetAllProduct');
       if (!response.ok) {
         throw new Error('Failed to fetch products');
       }
       const data = await response.json();
-      // console.log('Fetched products:', data.products);
-      setProducts(data.products || []);
+      setAvailableProducts(data.products || []);
     } catch (error) {
-      console.error("Failed to fetch products:", error);
-      showMessage('Failed to load products. Please try again.', true);
-    } finally {
-      setIsLoading(false);
+      console.error('Failed to fetch products:', error);
+      showMessage('Failed to load products', true);
     }
   };
 
-  const pickImage = async () => {
+  const pickImageFromGallery = async () => {
     try {
-      if (Platform.OS === 'web') {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        
-        const result = await new Promise<{ canceled: boolean; assets?: Array<{ uri: string; type: string; fileName: string }> }>((resolve) => {
-          input.onchange = async (event) => {
-            const file = (event.target as HTMLInputElement).files?.[0];
-            if (file) {
-           
-              const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-              if (!validTypes.includes(file.type)) {
-                showMessage('Please select a valid image file (JPEG, PNG, GIF, or WebP)', true);
-                resolve({ canceled: true });
-                return;
-              }
-              
-              const reader = new FileReader();
-              reader.onloadend = () => {
-                resolve({
-                  canceled: false,
-                  assets: [{
-                    uri: reader.result as string,
-                    type: file.type,
-                    fileName: file.name
-                  }]
-                });
-              };
-              reader.readAsDataURL(file);
-            } else {
-              resolve({ canceled: true });
-            }
-          };
-          input.click();
-        });
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+        base64: true,
+      });
 
-        if (!result.canceled && result.assets?.[0]) {
-          const selectedAsset = result.assets[0];
-          setImage({
-            uri: selectedAsset.uri,
-            type: selectedAsset.type,
-            name: selectedAsset.fileName,
-          });
-        }
-      } else {
-        const result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: true,
-          aspect: [4, 3],
-          quality: 1,
-          base64: true,
-        });
-
-        if (!result.canceled && result.assets?.[0]) {
-          const selectedAsset = result.assets[0];
-          // Determine the image type from the URI
-          const imageType = selectedAsset.uri.startsWith('data:') 
-            ? selectedAsset.uri.split(';')[0].split(':')[1]
-            : 'image/jpeg';
-            
-          setImage({
-            uri: selectedAsset.uri,
-            type: imageType,
-            name: selectedAsset.fileName || `product-image.${imageType.split('/')[1]}`,
-          });
-        }
+      if (!result.canceled && result.assets?.[0]) {
+        setUploadedImage(result.assets[0].uri);
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -194,325 +92,85 @@ const CreateProductScreen = ({ route, navigation }: Props) => {
     }
   };
 
-  const createBrand = async () => {
-    if (!newBrandName.trim()) {
-      showMessage('Please enter a brand name', true);
-      return;
-    }
-
+  const analyzeImage = async (imageUri: string) => {
+    setIsAnalyzing(true);
     try {
-      const response = await fetch(
-        "https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Brand/CreateBrand",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ name: newBrandName }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to create brand');
-      }
-
-      const data = await response.json();
-      setBrands([...brands, data]);
-      setNewBrandName('');
-      showMessage('Brand created successfully', false);
-    } catch (error) {
-      console.error("Failed to create brand:", error);
-      showMessage('Failed to create brand', true);
-    }
-  };
-
- 
-  const handleCreateProduct = async () => {
-    if (!validateForm()) {
-      return;
-    }
-  
-    setIsSubmitting(true);
-    try {
-     
-      const token = await AsyncStorage.getItem('auth_token');
+      const token = await StorageService.getAuthToken();
       if (!token) {
-        throw new Error('No authentication token found');
+        showMessage('Please login to use AI analysis', true);
+        return;
       }
-  
-      const imageUrlOnly = image?.uri?.startsWith('http') ? image.uri : '';
-  
-      const productData = {
-        name,
-        description,
-        price: Number(price),
-        stockQuantity: Number(stockQuantity),
-        commissionRate: Number(commissionRate || 0),
-        categoryId: selectedCategory,
-        brandId: selectedBrand,
-        imageUrls: imageUrlOnly ? [imageUrlOnly] : [],
-      };
-  
-      // console.log('Sending product data:', productData);
-  
-      const response = await fetch(
-        'https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Product/CreateProduct',
-        {
-          method: 'POST',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify(productData),
-        }
-      );
-  
-      // console.log('Response status:', response.status);
-      const responseText = await response.text();
-      // console.log('Response text:', responseText);
-  
-      if (!response.ok) {
-        throw new Error(`Failed to create product: ${response.status} ${response.statusText}\nResponse: ${responseText}`);
-      }
-  
-      try {
-        const responseData = JSON.parse(responseText);
-        // console.log('Product created successfully:', responseData);
-        showMessage('Product created successfully', false);
-      } catch (e) {
-        // console.log('Response was not JSON, but product was likely created successfully');
-        showMessage('Product created successfully', false);
-      }
-  
-   
-      navigation.dispatch(
-        CommonActions.navigate({
-          name: 'BottomTabNavigator',
-          params: {
-            screen: 'HomeTab',
-            params: { refresh: true },
-          },
-        })
-      );
+
+      // Simulate AI analysis for now
+      await simulateAIAnalysis();
     } catch (error) {
-      console.error('Error creating product:', error);
-      showMessage(error instanceof Error ? error.message : 'Failed to create product', true);
+      console.error('AI Analysis error:', error);
+      await simulateAIAnalysis();
     } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
-
-  const updateProduct = async (productId: string) => {
-    if (!name || !description || !price || !stockQuantity || !selectedBrand || !selectedCategory) {
-      showMessage('Please fill in all required fields', true);
-      return;
-    }
-
-    try {
-      const productData = {
-        name,
-        description,
-        price: Number(price),
-        stockQuantity: Number(stockQuantity),
-        brandId: selectedBrand,
-        categoryId: selectedCategory,
-        commissionRate: Number(commissionRate || "0"),
-        imageUrls: image ? [image.uri] : []
-      };
-
-      // console.log('Sending update data:', productData);
-
-      const response = await fetch(
-        `https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Product/UpdateProduct/${productId}`,
-        {
-          method: "PUT",
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(productData),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || `Failed to update product: ${response.status} ${response.statusText}`);
-      }
-
-      showMessage('Product updated successfully', false);
-      resetForm();
-      navigation.dispatch(
-        CommonActions.navigate({
-          name: 'BottomTabNavigator',
-          params: {
-            screen: 'HomeTab',
-            params: { refresh: true },
-          },
-        })
-      );
-    } catch (error) {
-      console.error("Failed to update product:", error);
-      showMessage(error instanceof Error ? error.message : 'Failed to update product', true);
+      setIsAnalyzing(false);
     }
   };
 
-  const deleteProduct = async (productId: string) => {
-    // console.log('Starting delete process for product:', productId);
-    try {
-      
-      const cleanProductId = productId.trim();
-      // console.log('Cleaned product ID:', cleanProductId);
-
-      const apiUrl = `https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Product/DeleteProduct/${cleanProductId}`;
-      // console.log('Sending delete request to:', apiUrl);
-      
-      const response = await fetch(apiUrl, {
-        method: "DELETE",
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-      });
-
-      // console.log('Delete response status:', response.status);
-      const responseText = await response.text();
-      // console.log('Delete response text:', responseText);
-
-      if (!response.ok) {
-        throw new Error(`Failed to delete product: ${response.status} ${response.statusText}\nResponse: ${responseText}`);
-      }
-
-      // console.log('Delete successful');
-      showMessage('Product deleted successfully', false);
-      resetForm();
-      navigation.dispatch(
-        CommonActions.navigate({
-          name: 'BottomTabNavigator',
-          params: {
-            screen: 'HomeTab',
-            params: { refresh: true },
-          },
-        })
-      );
-    } catch (error) {
-      console.error("Failed to delete product:", error);
-      showMessage(error instanceof Error ? error.message : 'Failed to delete product', true);
-      throw error;
-    }
-  };
-
-  const handleProductSelect = (product: any) => {
-    // console.log('Product selected:', product);
-    if (!product.productId) {
-      showMessage('Invalid product data: missing product ID', true);
-      return;
-    }
-    setSelectedProductId(product.productId);
-    setName(product.name);
-    setDescription(product.description);
-    setPrice(product.price.toString());
-    setStockQuantity(product.stockQuantity.toString());
-    setCommissionRate(product.commissionRate?.toString() || '');
-    setSelectedBrand(product.brandId);
-    setSelectedCategory(product.categoryId);
-    if (product.imageUrls && product.imageUrls.length > 0) {
-      setImage({
-        uri: product.imageUrls[0],
-        type: 'image/jpeg',
-        name: 'product-image.jpg'
-      });
-    }
-  };
-
-  const handleUpdateProduct = async () => {
-    if (!selectedProductId) {
-      showMessage('No product selected for update', true);
-      return;
-    }
-
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await updateProduct(selectedProductId);
-      showMessage('Product updated successfully', false);
-      resetForm();
-      navigation.dispatch(
-        CommonActions.navigate({
-          name: 'BottomTabNavigator',
-          params: {
-            screen: 'HomeTab',
-            params: { refresh: true },
-          },
-        })
-      );
-    } catch (error) {
-      console.error("Failed to update product:", error);
-      showMessage(error instanceof Error ? error.message : 'Failed to update product', true);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDeleteProduct = async () => {
-    // console.log('Delete button clicked, selectedProductId:', selectedProductId);
+  const simulateAIAnalysis = async () => {
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
-    if (!selectedProductId) {
-      // console.log('No product selected');
-      showMessage('No product selected for deletion', true);
-      return;
-    }
+    const mockAnalysis: AIAnalysis = {
+      skinTone: 'Warm Medium',
+      skinType: 'Combination',
+      faceShape: 'Oval',
+      recommendations: [
+        'Use warm-toned foundation for your skin tone',
+        'Opt for cream-based products for combination skin',
+        'Highlight cheekbones to enhance oval face shape',
+        'Choose products with SPF for daily protection'
+      ]
+    };
     
-    // console.log('Delete confirmed, proceeding with deletion');
-    setIsSubmitting(true);
-    try {
-      await deleteProduct(selectedProductId);
-    } catch (error) {
-      console.error("Delete operation failed:", error);
-      showMessage(error instanceof Error ? error.message : 'Failed to delete product', true);
-    } finally {
-      setIsSubmitting(false);
-    }
+    setAiAnalysis(mockAnalysis);
+    generateRecommendations(mockAnalysis);
   };
 
-  const resetForm = () => {
-    setSelectedProductId(null);
-    setName('');
-    setDescription('');
-    setPrice('');
-    setStockQuantity('');
-    setCommissionRate('');
-    setSelectedBrand('');
-    setSelectedCategory('');
-    setImage(null);
+  const generateRecommendations = (analysis: AIAnalysis) => {
+    const recommendations: RecommendedProduct[] = [];
+    
+    availableProducts.forEach(product => {
+      let matchScore = 0;
+      let reason = '';
+      
+      if (product.name.toLowerCase().includes('foundation')) {
+        matchScore += 30;
+        reason = 'Perfect foundation for your skin tone';
+      }
+      if (product.name.toLowerCase().includes('concealer')) {
+        matchScore += 25;
+        reason = 'Great concealer for combination skin';
+      }
+      if (product.name.toLowerCase().includes('highlight')) {
+        matchScore += 20;
+        reason = 'Ideal for highlighting your oval face shape';
+      }
+      if (product.name.toLowerCase().includes('blush')) {
+        matchScore += 15;
+        reason = 'Warm-toned blush to complement your skin';
+      }
+      
+      if (matchScore > 0) {
+        recommendations.push({
+          product,
+          reason,
+          matchScore
+        });
+      }
+    });
+    
+    recommendations.sort((a, b) => b.matchScore - a.matchScore);
+    setRecommendedProducts(recommendations.slice(0, 5));
   };
 
-  const validateForm = () => {
-    if (!name.trim()) {
-      showMessage('Please enter a product name', true);
-      return false;
-    }
-    if (!description.trim()) {
-      showMessage('Please enter a product description', true);
-      return false;
-    }
-    if (!price.trim() || isNaN(Number(price)) || Number(price) <= 0) {
-      showMessage('Please enter a valid price', true);
-      return false;
-    }
-    if (!stockQuantity.trim() || isNaN(Number(stockQuantity)) || Number(stockQuantity) < 0) {
-      showMessage('Please enter a valid stock quantity', true);
-      return false;
-    }
-    if (!selectedCategory) {
-      showMessage('Please select a category', true);
-      return false;
-    }
-    return true;
+  const resetAnalysis = () => {
+    setUploadedImage(null);
+    setAiAnalysis(null);
+    setRecommendedProducts([]);
   };
 
   return (
@@ -522,149 +180,115 @@ const CreateProductScreen = ({ route, navigation }: Props) => {
           <Text style={styles.messageText}>{message}</Text>
         </View>
       )}
-      <Text style={styles.title}>{route.params?.mode === 'edit' ? 'Edit Product' : 'Create New Product'}</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Product Name"
-        value={name}
-        onChangeText={setName}
-      />
-      <TextInput
-        style={[styles.input, styles.textArea]}
-        placeholder="Product Description"
-        value={description}
-        onChangeText={setDescription}
-        multiline
-        numberOfLines={4}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Price"
-        value={price}
-        onChangeText={setPrice}
-        keyboardType="numeric"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Stock Quantity"
-        value={stockQuantity}
-        onChangeText={setStockQuantity}
-        keyboardType="numeric"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Commission Rate (optional)"
-        value={commissionRate}
-        onChangeText={setCommissionRate}
-        keyboardType="numeric"
-      />
+      <Text style={styles.title}>AI Beauty Scanner</Text>
+      <Text style={styles.subtitle}>
+        Upload a photo to get personalized makeup recommendations
+      </Text>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Image</Text>
-        {image ? (
-          <View style={styles.imagePreviewContainer}>
-            <Image source={{ uri: image.uri }} style={styles.imagePreview} />
-            <TouchableOpacity onPress={() => setImage(null)} style={styles.removeImageButton}>
-              <Text style={styles.removeImageButtonText}>X</Text>
-            </TouchableOpacity>
+      {!uploadedImage && (
+        <View style={styles.uploadSection}>
+          <TouchableOpacity
+            style={styles.uploadButton}
+            onPress={pickImageFromGallery}
+          >
+            <Ionicons name="images" size={48} color={Colors.primary} />
+            <Text style={styles.uploadButtonText}>Upload Photo</Text>
+            <Text style={styles.uploadButtonSubtext}>
+              Take a selfie or choose from gallery
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {uploadedImage && (
+        <View style={styles.imagePreviewContainer}>
+          <Image 
+            source={{ uri: uploadedImage }} 
+            style={styles.imagePreview} 
+          />
+          <View style={styles.imageActions}>
+            <CustomButton
+              title="Analyze with AI"
+              onPress={() => analyzeImage(uploadedImage)}
+              variant="primary"
+              disabled={isAnalyzing}
+            />
+            <CustomButton
+              title="Choose Different Photo"
+              onPress={resetAnalysis}
+              variant="secondary"
+            />
           </View>
-        ) : (
-          <CustomButton title="Select Image" onPress={pickImage} variant="secondary" />
-        )}
-      </View>
+        </View>
+      )}
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Brand</Text>
-        {isLoading ? (
-          <ActivityIndicator size="small" color={Colors.primary} />
-        ) : (
-          <ScrollView horizontal style={styles.brandList}>
-            {brands.map((brand) => (
+      {aiAnalysis && (
+        <View style={styles.analysisContainer}>
+          <Text style={styles.analysisTitle}>AI Analysis Results</Text>
+          
+          <View style={styles.analysisGrid}>
+            <View style={styles.analysisItem}>
+              <Text style={styles.analysisLabel}>Skin Tone</Text>
+              <Text style={styles.analysisValue}>{aiAnalysis.skinTone}</Text>
+            </View>
+            <View style={styles.analysisItem}>
+              <Text style={styles.analysisLabel}>Skin Type</Text>
+              <Text style={styles.analysisValue}>{aiAnalysis.skinType}</Text>
+            </View>
+            <View style={styles.analysisItem}>
+              <Text style={styles.analysisLabel}>Face Shape</Text>
+              <Text style={styles.analysisValue}>{aiAnalysis.faceShape}</Text>
+            </View>
+          </View>
+
+          <Text style={styles.recommendationsTitle}>AI Recommendations</Text>
+          {aiAnalysis.recommendations.map((rec, index) => (
+            <View key={index} style={styles.recommendationItem}>
+              <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
+              <Text style={styles.recommendationText}>{rec}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {recommendedProducts.length > 0 && (
+        <View style={styles.productsContainer}>
+          <Text style={styles.productsTitle}>Recommended Products</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {recommendedProducts.map((item, index) => (
               <TouchableOpacity
-                key={brand.brandId}
-                style={[
-                  styles.brandChip,
-                  selectedBrand === brand.brandId && styles.selectedBrandChip,
-                ]}
-                onPress={() => setSelectedBrand(brand.brandId)}
+                key={index}
+                style={styles.productCard}
+                onPress={() => navigation.navigate('ProductDetail', { product: item.product })}
               >
-                <Text
-                  style={[
-                    styles.brandChipText,
-                    selectedBrand === brand.brandId && styles.selectedBrandChipText,
-                  ]}
-                >
-                  {brand.name}
+                <Image
+                  source={{ uri: item.product.imageUrls?.[0] || 'https://via.placeholder.com/80' }}
+                  style={styles.productImage}
+                />
+                <Text style={styles.productName} numberOfLines={2}>
+                  {item.product.name}
                 </Text>
+                <Text style={styles.productPrice}>
+                  {item.product.price.toLocaleString()} VND
+                </Text>
+                <Text style={styles.productReason} numberOfLines={2}>
+                  {item.reason}
+                </Text>
+                <View style={styles.matchScore}>
+                  <Text style={styles.matchScoreText}>{item.matchScore}% Match</Text>
+                </View>
               </TouchableOpacity>
             ))}
           </ScrollView>
-        )}
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Category</Text>
-        <ScrollView horizontal style={styles.categoryList}>
-          {categories.map((category) => (
-            <TouchableOpacity
-              key={category.categoryId}
-              style={[
-                styles.categoryChip,
-                selectedCategory === category.categoryId && styles.selectedCategoryChip,
-              ]}
-              onPress={() => setSelectedCategory(category.categoryId)}
-            >
-              <Text
-                style={[
-                  styles.categoryChipText,
-                  selectedCategory === category.categoryId && styles.selectedCategoryChipText,
-                ]}
-              >
-                {category.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      <View style={styles.buttonContainer}>
-        {selectedProductId ? (
-          <>
-            <CustomButton
-              title={isSubmitting ? "Updating..." : "Update Product"}
-              onPress={handleUpdateProduct}
-              variant="primary"
-              style={styles.actionButton}
-              disabled={isSubmitting}
-            />
-            <CustomButton
-              title="Cancel"
-              onPress={() => navigation.goBack()}
-              variant="secondary"
-              style={styles.actionButton}
-              disabled={isSubmitting}
-            />
-          </>
-        ) : (
-          <CustomButton
-            title={isSubmitting ? "Creating..." : "Create Product"}
-            onPress={handleCreateProduct}
-            variant="primary"
-            style={styles.createButton}
-            disabled={isSubmitting}
-          />
-        )}
-      </View>
-
-      {isLoading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
-          <Text>Loading products...</Text>
         </View>
       )}
-      {products.length === 0 && !isLoading && (
-        <Text style={styles.noProductsText}>No products found. Create one!</Text>
+
+      {isAnalyzing && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>AI is analyzing your photo...</Text>
+        </View>
       )}
     </ScrollView>
   );
@@ -679,159 +303,185 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     color: Colors.primary,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.sm,
     textAlign: 'center',
   },
-  input: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Spacing.xs,
-    padding: Spacing.sm,
-    marginBottom: Spacing.sm,
-    backgroundColor: Colors.surface,
-    color: Colors.text,
+  subtitle: {
     fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: Spacing.lg,
+    lineHeight: 20,
   },
-  textArea: {
-    height: 80,
-    textAlignVertical: 'top',
+  uploadSection: {
+    marginBottom: Spacing.lg,
+    alignItems: 'center',
   },
-  section: {
+  uploadButton: {
+    alignItems: 'center',
+    padding: Spacing.xl,
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    width: '100%',
+    borderWidth: 2,
+    borderColor: Colors.border,
+    borderStyle: 'dashed',
+    minHeight: 200,
+    justifyContent: 'center',
+  },
+  uploadButtonText: {
+    marginTop: Spacing.md,
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  uploadButtonSubtext: {
+    marginTop: Spacing.xs,
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
+  imagePreviewContainer: {
+    alignItems: 'center',
     marginBottom: Spacing.lg,
   },
-  sectionTitle: {
+  imagePreview: {
+    width: 250,
+    height: 250,
+    borderRadius: 16,
+    marginBottom: Spacing.md,
+  },
+  imageActions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  analysisContainer: {
+    backgroundColor: Colors.surface,
+    padding: Spacing.md,
+    borderRadius: 12,
+    marginBottom: Spacing.lg,
+  },
+  analysisTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.text,
+    marginBottom: Spacing.md,
+  },
+  analysisGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.md,
+  },
+  analysisItem: {
+    flex: 1,
+    alignItems: 'center',
+    padding: Spacing.sm,
+  },
+  analysisLabel: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.xs,
+  },
+  analysisValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  recommendationsTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     color: Colors.text,
     marginBottom: Spacing.sm,
   },
-  imagePreviewContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 6,
-    overflow: 'hidden',
-    marginBottom: Spacing.sm,
-    alignSelf: 'center',
-    position: 'relative',
-  },
-  imagePreview: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  removeImageButton: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: 'rgba(255,0,0,0.7)',
-    borderRadius: 12,
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  removeImageButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 12,
-  },
-  brandList: {
-    marginBottom: Spacing.sm,
-  },
-  brandChip: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    marginRight: Spacing.xs,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  selectedBrandChip: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  brandChipText: {
-    color: Colors.text,
-    fontSize: 12,
-  },
-  selectedBrandChipText: {
-    color: '#fff',
-  },
-  categoryList: {
-    marginBottom: Spacing.sm,
-  },
-  categoryChip: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    marginRight: Spacing.xs,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  selectedCategoryChip: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  categoryChipText: {
-    color: Colors.text,
-    fontSize: 12,
-  },
-  selectedCategoryChipText: {
-    color: '#fff',
-  },
-  buttonContainer: {
+  recommendationItem: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: Spacing.md,
+    alignItems: 'center',
+    marginBottom: Spacing.xs,
+  },
+  recommendationText: {
+    marginLeft: Spacing.xs,
+    fontSize: 14,
+    color: Colors.text,
+    flex: 1,
+  },
+  productsContainer: {
     marginBottom: Spacing.lg,
   },
-  actionButton: {
-    flex: 1,
-    marginHorizontal: Spacing.xs,
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.sm,
+  productsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.text,
+    marginBottom: Spacing.md,
   },
-  createButton: {
-    marginTop: Spacing.md,
-    marginBottom: Spacing.lg,
-    paddingVertical: Spacing.xs,
+  productCard: {
+    width: 160,
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    padding: Spacing.sm,
+    marginRight: Spacing.sm,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  deleteButton: {
-    flex: 1,
-    marginHorizontal: Spacing.xs,
-    backgroundColor: Colors.error,
-    opacity: 1,
-    paddingVertical: Spacing.xs,
+  productImage: {
+    width: '100%',
+    height: 90,
+    borderRadius: 8,
+    marginBottom: Spacing.xs,
+  },
+  productName: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: Spacing.xs,
+  },
+  productPrice: {
+    fontSize: 12,
+    color: Colors.primary,
+    fontWeight: 'bold',
+    marginBottom: Spacing.xs,
+  },
+  productReason: {
+    fontSize: 10,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.xs,
+  },
+  matchScore: {
+    backgroundColor: Colors.success,
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: 2,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  matchScoreText: {
+    fontSize: 10,
+    color: Colors.background,
+    fontWeight: 'bold',
   },
   loadingContainer: {
-    padding: Spacing.lg,
     alignItems: 'center',
-  },
-  noProductsText: {
-    textAlign: 'center',
-    color: Colors.textSecondary,
     padding: Spacing.lg,
+  },
+  loadingText: {
+    marginTop: Spacing.sm,
     fontSize: 14,
+    color: Colors.textSecondary,
   },
   messageContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: Spacing.md,
+    padding: Spacing.sm,
+    borderRadius: 8,
+    marginBottom: Spacing.md,
   },
   messageText: {
-    color: Colors.text,
+    color: Colors.background,
     fontSize: 14,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   errorMessage: {
     backgroundColor: Colors.error,
@@ -841,4 +491,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CreateProductScreen; 
+export default ScannerScreen; 

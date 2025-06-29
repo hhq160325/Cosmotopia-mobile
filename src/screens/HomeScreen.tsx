@@ -13,6 +13,8 @@ import { apiClient } from "../services/apiClient"
 import { Product, Brand, Category } from "../types/products.type"
 import ProductCard from "../components/ProductCard"
 import { CommonActions } from '@react-navigation/native'
+import { Ionicons } from "@expo/vector-icons"
+import { FloatingChatButton } from "../components/FloatingChatButton"
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<BottomTabParamList, 'HomeTab'>,
@@ -28,6 +30,8 @@ export default function HomeScreen({ navigation, route }: Props) {
   const [products, setProducts] = useState<Product[]>([])
   const [brands, setBrands] = useState<any[]>([])
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState<string>("")
+  const [cartItemCount, setCartItemCount] = useState<number>(0)
 
   const cleanProductData = (product: any): Product => ({
     productId: String(product.productId || ''),
@@ -63,7 +67,7 @@ export default function HomeScreen({ navigation, route }: Props) {
   const fetchProducts = async () => {
     try {
       const response = await fetch(
-        "https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Product/GetAllProduct"
+        "https://localhost:7191/api/Product/GetAllProduct"
       )
       const data = await response.json()
       const productsItem = Array.isArray(data.products) ? data.products.map(cleanProductData) : []
@@ -77,7 +81,7 @@ export default function HomeScreen({ navigation, route }: Props) {
   const fetchBrands = async () => {
     try {
       const response = await fetch(
-        "https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Brand/GetAllBrand?page=1&pageSize=10"
+        "https://localhost:7191/api/Brand/GetAllBrand?page=1&pageSize=10"
       )
       const data = await response.json()
       const brandsItem = Array.isArray(data.brands) ? data.brands.map(cleanBrandData) : []
@@ -88,15 +92,41 @@ export default function HomeScreen({ navigation, route }: Props) {
     }
   }
 
+  const fetchCartItemCount = async () => {
+    try {
+      const token = await StorageService.getAuthToken();
+      if (!token) return;
+
+      const response = await fetch('https://localhost:7191/api/cart', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const count = Array.isArray(data) ? data.length : 0;
+        setCartItemCount(count);
+      }
+    } catch (error) {
+      console.error("Failed to fetch cart count:", error);
+    }
+  }
+
   useEffect(() => {
     fetchProducts()
     fetchBrands()
+    fetchCartItemCount()
   }, [])
 
   useEffect(() => {
     if (route.params?.refresh) {
       console.log('Refreshing products list...');
       fetchProducts();
+      fetchCartItemCount();
       navigation.setParams({ refresh: false });
     }
   }, [route.params?.refresh])
@@ -104,7 +134,7 @@ export default function HomeScreen({ navigation, route }: Props) {
   const createBrand = async (name: string) => {
     try {
       const response = await fetch(
-        "https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Brand/CreateBrand",
+        "https://localhost:7191/api/Brand/CreateBrand",
         {
           method: "POST",
           headers: {
@@ -156,7 +186,7 @@ export default function HomeScreen({ navigation, route }: Props) {
       }
 
       const response = await fetch(
-        "https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Product/CreateProduct",
+        "https://localhost:7191/api/Product/CreateProduct",
         {
           method: "POST",
           headers: {
@@ -191,20 +221,85 @@ export default function HomeScreen({ navigation, route }: Props) {
     ? products.filter((product: Product) => product.brandId && product.brandId === selectedBrand)
     : products
 
-  const ListHeader = () => (
-    <>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
-      <View style={styles.content}>
+  const searchFilteredProducts = searchQuery
+    ? filteredProducts.filter((product: Product) => 
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : filteredProducts
+
+  const Header = () => (
+    <View style={styles.header}>
+      <View style={styles.headerTop}>
         <View style={styles.logoContainer}>
           <View style={styles.logo}>
             <Text style={styles.logoText}>C</Text>
           </View>
           <Text style={styles.appName}>Cosmotopia</Text>
         </View>
-
-        <Text style={GlobalStyles.title}>Chào mừng đến với Cosmotopia!</Text>
-        <Text style={styles.subtitle}>Bạn đã đăng nhập thành công vào vũ trụ số của chúng tôi</Text>
+        <TouchableOpacity 
+          style={styles.cartButton}
+          onPress={() => navigation.navigate('ListTab')}
+        >
+          <Ionicons name="cart-outline" size={24} color={Colors.text} />
+          {cartItemCount > 0 && (
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>{cartItemCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
+      
+      <View style={styles.searchContainer}>
+        <View style={styles.searchBarContainer}>
+          <Ionicons name="search" size={20} color={Colors.textSecondary} style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Tìm kiếm sản phẩm..."
+            placeholderTextColor={Colors.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery("")}>
+              <Ionicons name="close-circle" size={20} color={Colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      <Text style={GlobalStyles.title}>Chào mừng đến với Cosmotopia!</Text>
+      <Text style={styles.subtitle}>Bạn đã đăng nhập thành công vào vũ trụ số của chúng tôi</Text>
+    </View>
+  )
+
+  const ListHeader = () => (
+    <>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+      <Header />
+      <FlatList
+        data={brands}
+        keyExtractor={item => String(item.brandId || item.name || Math.random().toString())}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingVertical: 10 }}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={[
+              styles.brandItem,
+              selectedBrand === (item.brandId || null) && styles.selectedBrandItem
+            ]}
+            onPress={() => setSelectedBrand(item.brandId === selectedBrand ? null : (item.brandId || null))}
+          >
+            <Text style={[
+              styles.brandName,
+              selectedBrand === (item.brandId || null) && styles.selectedBrandName
+            ]}>
+              {item.name || 'N/A'}
+            </Text>
+          </TouchableOpacity>
+        )}
+      />
     </>
   )
 
@@ -214,30 +309,8 @@ export default function HomeScreen({ navigation, route }: Props) {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <FlatList
-        ListHeaderComponent={
-          <>
-            <ListHeader />
-            <FlatList
-              data={brands}
-              keyExtractor={item => String(item.brandId || item.name || Math.random().toString())}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingVertical: 10 }}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.brandItem,
-                    selectedBrand === (item.brandId || null) && styles.selectedBrandItem
-                  ]}
-                  onPress={() => setSelectedBrand(item.brandId === selectedBrand ? null : (item.brandId || null))}
-                >
-                  <Text style={styles.brandName}>{item.name || 'N/A'}</Text>
-                </TouchableOpacity>
-              )}
-            />
-          </>
-        }
-        data={filteredProducts}
+        ListHeaderComponent={ListHeader}
+        data={searchFilteredProducts}
         keyExtractor={item => String(item.productId || Math.random().toString())}
         numColumns={2}
         columnWrapperStyle={styles.row}
@@ -264,6 +337,8 @@ export default function HomeScreen({ navigation, route }: Props) {
         contentContainerStyle={{ paddingBottom: 20 }}
         style={styles.container}
       />
+      
+      <FloatingChatButton />
     </KeyboardAvoidingView>
   )
 }
@@ -389,5 +464,52 @@ const styles = StyleSheet.create({
   brandName: {
     fontWeight: 'bold',
     color: Colors.text,
+  },
+  selectedBrandName: {
+    color: Colors.background,
+  },
+  header: {
+    backgroundColor: Colors.background,
+    padding: Spacing.md,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  cartButton: {
+    padding: Spacing.sm,
+  },
+  searchContainer: {
+    marginBottom: Spacing.md,
+  },
+  searchBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Spacing.sm,
+    padding: Spacing.md,
+  },
+  searchIcon: {
+    marginRight: Spacing.md,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+  },
+  cartBadge: {
+    backgroundColor: Colors.primary,
+    borderRadius: 12,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    position: 'absolute',
+    top: -5,
+    right: -5,
+  },
+  cartBadgeText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: Colors.background,
   },
 })

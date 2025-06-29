@@ -37,7 +37,7 @@ const PlaceholderProductScreen = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Category/GetAllCategory?page=1&pageSize=10');
+      const response = await fetch('https://localhost:7191/api/Category/GetAllCategory?page=1&pageSize=10');
       const data = await response.json();
       setCategories(data.categories);
       setLoading(false);
@@ -49,7 +49,7 @@ const PlaceholderProductScreen = () => {
 
   const handleCreateCategory = async () => {
     try {
-      const response = await fetch('https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Category/CreateCategory', {
+      const response = await fetch('https://localhost:7191/api/Category/CreateCategory', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -74,7 +74,7 @@ const PlaceholderProductScreen = () => {
     if (!editingCategory) return;
 
     try {
-      const response = await fetch(`https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Category/UpdateCategoryBy/${editingCategory.categoryId}`, {
+      const response = await fetch(`https://localhost:7191/api/Category/UpdateCategoryBy/${editingCategory.categoryId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -110,7 +110,7 @@ const PlaceholderProductScreen = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              const response = await fetch(`https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Category/DeleteCategoryBy/${categoryId}`, {
+              const response = await fetch(`https://localhost:7191/api/Category/DeleteCategoryBy/${categoryId}`, {
                 method: 'DELETE',
                 headers: {
                   'Content-Type': 'application/json',

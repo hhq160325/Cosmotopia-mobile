@@ -9,7 +9,7 @@ export type RootStackParamList = {
   ResetPassword: { email: string }
   Home: undefined
   ProductDetail: { product: Product }
-  CreateProduct: { product?: Product; mode?: 'edit' | 'create' }
+  Scanner: { product?: Product; mode?: 'edit' | 'create' }
   BottomTabNavigator: NavigatorScreenParams<BottomTabParamList> | undefined
   OrderDetail: undefined
   Profile: undefined
@@ -18,7 +18,7 @@ export type RootStackParamList = {
 export type BottomTabParamList = {
   HomeTab: { refresh?: boolean } | undefined
   ListTab: undefined
-  CreateProductTab: undefined
+  ScannerTab: undefined
   ProductTab: undefined
   MenuTab: undefined
 }

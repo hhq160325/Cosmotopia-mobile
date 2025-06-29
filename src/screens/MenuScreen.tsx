@@ -24,7 +24,7 @@ export default function MenuScreen({ navigation }: Props) {
   const createBrand = async (name: string) => {
     try {
       const response = await fetch(
-        "https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/Brand/CreateBrand",
+        "https://localhost:7191/api/Brand/CreateBrand",
         {
           method: "POST",
           headers: {
@@ -78,9 +78,9 @@ export default function MenuScreen({ navigation }: Props) {
       <CustomButton title="Create New Brand" onPress={handleCreateBrand} variant="primary" style={styles.button} />
 
       <CustomButton
-        title="Create New Product"
+        title="AI Beauty Scanner"
         onPress={() => {
-          navigation.navigate('CreateProductTab'); // Navigate to the CreateProductTab
+          navigation.navigate('ScannerTab'); // Navigate to the ScannerTab
         }}
         variant="primary"
         style={styles.button}

@@ -26,7 +26,7 @@ const OrderDetailScreen = () => {
   const fetchOrderDetails = async () => {
     try {
       const response = await fetch(
-        'https://cosmetics20250328083913-ajfsa0cegrdggzej.southeastasia-01.azurewebsites.net/api/OrderDetail?page=1&pageSize=10'
+        'https://localhost:7191/api/OrderDetail?page=1&pageSize=10'
       );
       if (!response.ok) {
         throw new Error('Failed to fetch order details');
