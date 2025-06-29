@@ -15,6 +15,7 @@ import ProductCard from "../components/ProductCard"
 import { CommonActions } from '@react-navigation/native'
 import { Ionicons } from "@expo/vector-icons"
 import { FloatingChatButton } from "../components/FloatingChatButton"
+import { useCart } from '../context/CartContext'
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<BottomTabParamList, 'HomeTab'>,
@@ -31,7 +32,8 @@ export default function HomeScreen({ navigation, route }: Props) {
   const [brands, setBrands] = useState<any[]>([])
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState<string>("")
-  const [cartItemCount, setCartItemCount] = useState<number>(0)
+  const { cart } = useCart()
+  const cartItemCount = cart.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0)
 
   const cleanProductData = (product: any): Product => ({
     productId: String(product.productId || ''),
@@ -92,42 +94,16 @@ export default function HomeScreen({ navigation, route }: Props) {
     }
   }
 
-  const fetchCartItemCount = async () => {
-    try {
-      const token = await StorageService.getAuthToken();
-      if (!token) return;
-
-      const response = await fetch('https://localhost:7191/api/cart', {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const count = Array.isArray(data) ? data.length : 0;
-        setCartItemCount(count);
-      }
-    } catch (error) {
-      console.error("Failed to fetch cart count:", error);
-    }
-  }
-
   useEffect(() => {
     fetchProducts()
     fetchBrands()
-    fetchCartItemCount()
   }, [])
 
   useEffect(() => {
     if (route.params?.refresh) {
-      console.log('Refreshing products list...');
-      fetchProducts();
-      fetchCartItemCount();
-      navigation.setParams({ refresh: false });
+      console.log('Refreshing products list...')
+      fetchProducts()
+      navigation.setParams({ refresh: false })
     }
   }, [route.params?.refresh])
 

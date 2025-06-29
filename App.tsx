@@ -10,6 +10,7 @@ import * as SplashScreen from "expo-splash-screen"
 import { Ionicons } from "@expo/vector-icons"
 import { View, Platform } from "react-native"
 import { RouteProp } from '@react-navigation/native';
+import { CartProvider } from './src/context/CartContext';
 
 // Screens
 import SplashScreenComponent from "./src/screens/SplashScreen"
@@ -22,7 +23,7 @@ import HomeScreen from "./src/screens/HomeScreen"
 import ProductDetailScreen from "./src/screens/ProductDetailScreen"
 import PlaceholderListScreen from "./src/screens/PlaceholderListScreen"
 import ScannerScreen from "./src/screens/ScannerScreen"
-import PlaceholderProductScreen from "./src/screens/PlaceholderProductScreen"
+import PlaceholderKOLScreen from "./src/screens/PlaceholderKOLScreen"
 import MenuScreen from "./src/screens/MenuScreen"
 import OrderDetailScreen from "./src/screens/OrderDetailScreen"
 import ProfileScreen from "./src/screens/ProfileScreen"
@@ -92,9 +93,9 @@ function BottomTabNavigator() {
       })}
     >
       <Tab.Screen name="HomeTab" component={HomeScreen} options={{ title: 'Home', tabBarLabel: 'Home' }} />
-      <Tab.Screen name="ListTab" component={PlaceholderListScreen} options={{ title: 'List', tabBarLabel: 'List' }} />
+      <Tab.Screen name="ListTab" component={PlaceholderListScreen} options={{ title: 'Giỏ hàng', tabBarLabel: 'Giỏ hàng' }} />
       <Tab.Screen name="ScannerTab" component={ScannerScreen} options={{ title: '', tabBarLabel: '' }} />
-      <Tab.Screen name="ProductTab" component={PlaceholderProductScreen} options={{ title: 'Product', tabBarLabel: 'Product' }} />
+      <Tab.Screen name="ProductTab" component={PlaceholderKOLScreen} options={{ title: 'KOL Review', tabBarLabel: 'KOL Review' }} />
       <Tab.Screen name="MenuTab" component={MenuScreen} options={{ title: 'Menu', tabBarLabel: 'Menu' }} />
     </Tab.Navigator>
   );
@@ -139,26 +140,28 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <StatusBar style="dark" />
-      <Stack.Navigator
-        initialRouteName={isAuthenticated ? "BottomTabNavigator" : "Login"}
-        screenOptions={{
-          headerShown: false,
-          gestureEnabled: true,
-        }}
-      >
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Register" component={RegisterScreen} />
-        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-        <Stack.Screen name="VerifyOtp" component={VerifyOtpScreen} />
-        <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="BottomTabNavigator" component={BottomTabNavigator} options={{ headerShown: false }} />
-        <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
-        <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
-        <Stack.Screen name="Profile" component={ProfileScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <CartProvider>
+      <NavigationContainer>
+        <StatusBar style="dark" />
+        <Stack.Navigator
+          initialRouteName={isAuthenticated ? "BottomTabNavigator" : "Login"}
+          screenOptions={{
+            headerShown: false,
+            gestureEnabled: true,
+          }}
+        >
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Register" component={RegisterScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen name="VerifyOtp" component={VerifyOtpScreen} />
+          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="BottomTabNavigator" component={BottomTabNavigator} options={{ headerShown: false }} />
+          <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
+          <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
+          <Stack.Screen name="Profile" component={ProfileScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </CartProvider>
   )
 }

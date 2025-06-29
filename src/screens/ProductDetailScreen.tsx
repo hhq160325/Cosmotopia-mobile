@@ -28,6 +28,30 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
   const [quantity, setQuantity] = useState<number>(1);
   const [isAddingToCart, setIsAddingToCart] = useState<boolean>(false);
 
+  // Mock rating data
+  const ratingValue = 4.5;
+  const ratingCount = 3;
+  const mockReviews = [
+    {
+      id: 1,
+      user: 'Nguyễn Văn A',
+      rating: 5,
+      comment: 'Sản phẩm rất tốt, giao hàng nhanh!'
+    },
+    {
+      id: 2,
+      user: 'Trần Thị B',
+      rating: 4,
+      comment: 'Chất lượng ổn, sẽ ủng hộ tiếp.'
+    },
+    {
+      id: 3,
+      user: 'Lê Văn C',
+      rating: 4,
+      comment: 'Đóng gói đẹp, giá hợp lý.'
+    },
+  ];
+
   const showMessage = (msg: string, isError: boolean = false) => {
     setMessage(msg);
     setIsErrorMessage(isError);
@@ -177,6 +201,34 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
       )}
       
       <ProductDetailCard product={product} />
+
+      {/* Rating Section */}
+      <View style={styles.ratingContainer}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+          {[1,2,3,4,5].map(i => (
+            <Ionicons
+              key={i}
+              name={i <= Math.floor(ratingValue) ? 'star' : (i - ratingValue < 1 ? 'star-half' : 'star-outline')}
+              size={20}
+              color={Colors.primary}
+              style={{ marginRight: 2 }}
+            />
+          ))}
+          <Text style={styles.ratingValue}>{ratingValue}/5</Text>
+          <Text style={styles.ratingCount}>({ratingCount} đánh giá)</Text>
+        </View>
+        {mockReviews.map(review => (
+          <View key={review.id} style={styles.reviewItem}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+              <Ionicons name="person-circle" size={18} color={Colors.textSecondary} style={{ marginRight: 4 }} />
+              <Text style={styles.reviewUser}>{review.user}</Text>
+              <Ionicons name="star" size={14} color={Colors.primary} style={{ marginLeft: 8, marginRight: 2 }} />
+              <Text style={styles.reviewRating}>{review.rating}</Text>
+            </View>
+            <Text style={styles.reviewComment}>{review.comment}</Text>
+          </View>
+        ))}
+      </View>
 
       {/* Quantity Selector */}
       <View style={styles.quantityContainer}>
@@ -342,5 +394,48 @@ const styles = StyleSheet.create({
   disabledButton: {
     backgroundColor: Colors.border,
     opacity: 0.5,
+  },
+  ratingContainer: {
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    padding: Spacing.md,
+    marginHorizontal: Spacing.md,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  ratingValue: {
+    fontWeight: 'bold',
+    color: Colors.primary,
+    marginLeft: 8,
+    fontSize: 15,
+  },
+  ratingCount: {
+    color: Colors.textSecondary,
+    marginLeft: 6,
+    fontSize: 13,
+  },
+  reviewItem: {
+    marginTop: 8,
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  reviewUser: {
+    fontWeight: '600',
+    color: Colors.text,
+    fontSize: 14,
+  },
+  reviewRating: {
+    color: Colors.primary,
+    fontWeight: 'bold',
+    fontSize: 13,
+  },
+  reviewComment: {
+    color: Colors.textSecondary,
+    fontSize: 13,
+    marginLeft: 22,
+    marginTop: 2,
   },
 }); 

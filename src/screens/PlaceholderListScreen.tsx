@@ -7,6 +7,7 @@ import { Colors } from '../constants/Colors';
 import { Spacing } from '../constants/Dimensions'; 
 import { StorageService } from '../services/storageService';
 import { fetchCartItems } from '../services/cartService';
+import { useCart } from '../context/CartContext';
 
 // Extend Product type for cart items to include quantity
 type CartProduct = BaseProduct & { quantity?: number };
@@ -49,6 +50,7 @@ const PlaceholderListScreen = () => {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [isErrorMessage, setIsErrorMessage] = useState<boolean>(false);
+  const { cart, setCart } = useCart();
 
   const showMessage = (msg: string, isError: boolean = false) => {
     setMessage(msg);
@@ -65,6 +67,7 @@ const PlaceholderListScreen = () => {
       if (!token) {
         setError('Please login to view your cart');
         setProducts([]);
+        setCart([]);
         setLoading(false);
         return;
       }
@@ -86,6 +89,7 @@ const PlaceholderListScreen = () => {
         await StorageService.clearAuthData();
         setError('Session expired. Please login again.');
         setProducts([]);
+        setCart([]);
         setLoading(false);
         return;
       }
@@ -97,8 +101,8 @@ const PlaceholderListScreen = () => {
       const data = await response.json();
       console.log('Fetched cart data:', data);
       
-      // Assuming data.cartItems or data.items is the array of cart products
-      const cartItems = Array.isArray(data.cartItems) ? data.cartItems : (Array.isArray(data.items) ? data.items : []);
+      // Lấy đúng mảng cart từ response
+      const cartItems = Array.isArray(data) ? data : [];
       
       // If cart item structure is different, map to Product type
       const productsData = cartItems.map((item: any) => {
@@ -110,11 +114,13 @@ const PlaceholderListScreen = () => {
         };
       });
       setProducts(productsData);
+      setCart(productsData);
       setError(null);
     } catch (err: any) {
       console.error('Failed to fetch cart:', err);
       setError(err.message || 'Failed to load cart. Please try again.');
       setProducts([]);
+      setCart([]);
     } finally {
       setLoading(false);
     }

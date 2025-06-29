@@ -55,20 +55,8 @@ const ProductDetailCard = ({ product }: Props) => {
           <Text style={styles.commissionRate}>{product.commissionRate}%</Text>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Product Details</Text>
-          <View style={styles.detailsContainer}>
-            <Text style={styles.detailItem}>Product ID: {product.productId}</Text>
-            <Text style={styles.detailItem}>Category: {product.category.name}</Text>
-            <Text style={styles.detailItem}>Brand: {product.brand.name}</Text>
-            <Text style={styles.detailItem}>Created: {new Date(product.createAt).toLocaleDateString()}</Text>
-            {product.updatedAt && (
-              <Text style={styles.detailItem}>
-                Last Updated: {new Date(product.updatedAt).toLocaleDateString()}
-              </Text>
-            )}
-          </View>
-        </View>
+       
+    
       </View>
     </ScrollView>
   );

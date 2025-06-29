@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Alert, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { Spacing } from '../constants/Dimensions';
@@ -87,6 +87,15 @@ const PaymentScreen = ({ navigation }: any) => {
         <View style={styles.linkBox}>
           <Text style={styles.linkLabel}>Link thanh toán:</Text>
           <Text style={styles.linkValue}>{paymentLink}</Text>
+          <View style={styles.qrBox}>
+            <Text style={styles.qrLabel}>Quét mã QR để thanh toán:</Text>
+            <View style={{ alignItems: 'center', marginVertical: 8 }}>
+              <Image
+                source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(paymentLink)}` }}
+                style={{ width: 160, height: 160, borderRadius: 12, backgroundColor: '#fff' }}
+              />
+            </View>
+          </View>
         </View>
       ) : null}
       <TextInput
@@ -147,6 +156,20 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     marginBottom: 18,
+  },
+  qrBox: {
+    marginTop: 10,
+    padding: 8,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  qrLabel: {
+    color: Colors.primary,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 4,
   },
   linkLabel: {
     fontWeight: 'bold',

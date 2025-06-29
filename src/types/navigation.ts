@@ -12,6 +12,7 @@ export type RootStackParamList = {
   Scanner: { product?: Product; mode?: 'edit' | 'create' }
   BottomTabNavigator: NavigatorScreenParams<BottomTabParamList> | undefined
   OrderDetail: undefined
+  OrderHistory: undefined
   Profile: undefined
 }
 

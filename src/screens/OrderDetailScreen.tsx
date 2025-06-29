@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image } from 'react-native';
+import { StorageService } from '../services/storageService';
 
 interface OrderDetail {
   id: string;
@@ -25,8 +26,18 @@ const OrderDetailScreen = () => {
 
   const fetchOrderDetails = async () => {
     try {
+      const token = await StorageService.getAuthToken();
+      if (!token) throw new Error('Bạn chưa đăng nhập');
       const response = await fetch(
-        'https://localhost:7191/api/OrderDetail?page=1&pageSize=10'
+        'https://localhost:7191/api/OrderDetail?page=1&pageSize=10',
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        }
       );
       if (!response.ok) {
         throw new Error('Failed to fetch order details');

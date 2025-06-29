@@ -10,6 +10,8 @@ import { RootStackParamList } from '../types/navigation';
 import { CommonActions } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { StorageService } from '../services/storageService';
+import { useCart } from '../context/CartContext';
+import { fetchCartItems } from '../services/cartService';
 
 type ScannerScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Scanner'>;
 
@@ -47,6 +49,7 @@ const ScannerScreen = ({ navigation }: Props) => {
   const [message, setMessage] = useState<string | null>(null);
   const [isErrorMessage, setIsErrorMessage] = useState<boolean>(false);
   const [addingToCart, setAddingToCart] = useState<{ [key: string]: boolean }>({});
+  const { setCart } = useCart();
 
   const showMessage = (msg: string, isError: boolean = false) => {
     setMessage(msg);
@@ -371,6 +374,9 @@ const ScannerScreen = ({ navigation }: Props) => {
       }
 
       showMessage(`Đã thêm "${product.name}" vào giỏ hàng!`, false);
+      // Fetch lại cart và cập nhật context
+      const updatedCart = await fetchCartItems();
+      setCart(updatedCart);
       
     } catch (error: any) {
       console.error('Add to cart error:', error);
