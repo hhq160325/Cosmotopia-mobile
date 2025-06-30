@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { View, Text, FlatList, TextInput, Image, StyleSheet, StatusBar, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native"
+import { View, Text, FlatList, TextInput, Image, StyleSheet, StatusBar, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Alert } from "react-native"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import type { RootStackParamList, BottomTabParamList } from "../types/navigation"
 import { CompositeNavigationProp } from '@react-navigation/native'
@@ -16,6 +16,7 @@ import { CommonActions } from '@react-navigation/native'
 import { Ionicons } from "@expo/vector-icons"
 import { FloatingChatButton } from "../components/FloatingChatButton"
 import { useCart } from '../context/CartContext'
+import { API_CONFIG } from '../config/api'
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<BottomTabParamList, 'HomeTab'>,
@@ -69,7 +70,7 @@ export default function HomeScreen({ navigation, route }: Props) {
   const fetchProducts = async () => {
     try {
       const response = await fetch(
-        "https://localhost:7191/api/Product/GetAllProduct"
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.GET_ALL_PRODUCTS}`
       )
       const data = await response.json()
       const productsItem = Array.isArray(data.products) ? data.products.map(cleanProductData) : []
@@ -83,7 +84,7 @@ export default function HomeScreen({ navigation, route }: Props) {
   const fetchBrands = async () => {
     try {
       const response = await fetch(
-        "https://localhost:7191/api/Brand/GetAllBrand?page=1&pageSize=10"
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.GET_ALL_BRANDS}?page=1&pageSize=10`
       )
       const data = await response.json()
       const brandsItem = Array.isArray(data.brands) ? data.brands.map(cleanBrandData) : []
@@ -110,7 +111,7 @@ export default function HomeScreen({ navigation, route }: Props) {
   const createBrand = async (name: string) => {
     try {
       const response = await fetch(
-        "https://localhost:7191/api/Brand/CreateBrand",
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CREATE_BRAND}`,
         {
           method: "POST",
           headers: {
@@ -162,7 +163,7 @@ export default function HomeScreen({ navigation, route }: Props) {
       }
 
       const response = await fetch(
-        "https://localhost:7191/api/Product/CreateProduct",
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CREATE_PRODUCT}`,
         {
           method: "POST",
           headers: {

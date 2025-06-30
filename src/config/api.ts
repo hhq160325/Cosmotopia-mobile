@@ -1,5 +1,17 @@
+import { Platform } from 'react-native';
+
+// Determine the correct base URL based on platform and environment
+const getBaseUrl = () => {
+  // For Android emulator
+  if (Platform.OS === 'android') {
+    return 'https://10.0.2.2:7191/api';
+  }
+  // For iOS simulator or web
+  return 'https://localhost:7191/api';
+};
+
 export const API_CONFIG = {
-  BASE_URL: "https://localhost:7191/api",
+  BASE_URL: getBaseUrl(),
   ENDPOINTS: {
     LOGIN: "/User/Login",
     REGISTER_WITH_OTP: "/User/registerwithotp",
@@ -8,6 +20,23 @@ export const API_CONFIG = {
     FORGOT_PASSWORD: "/User/forgotpassword",
     NEW_PASSWORD: "/User/newPass",
     GET_ALL_PRODUCTS: "/Product/GetAllProduct",
+    CREATE_PRODUCT: "/Product/CreateProduct",
+    DELETE_PRODUCT: "/Product/DeleteProduct",
+    GET_ALL_BRANDS: "/Brand/GetAllBrand",
+    CREATE_BRAND: "/Brand/CreateBrand",
+    CART: "/cart",
+    CART_ADD: "/cart/add",
+    CART_REMOVE: "/cart/remove",
+    ORDER: "/Order",
+    ORDER_HISTORY: "/Order/history",
+    ORDER_DETAIL: "/OrderDetail",
+    KOL_VIDEO_MY_VIDEOS: "/KOLVideo/myVideos",
+    KOL_VIDEO_UPLOAD: "/KOLVideo/upload",
+    KOL_VIDEO_DELETE: "/KOLVideo",
+    KOL_VIDEO_UPDATE: "/KOLVideo",
+    PAYMENT_CREATE_LINK: "/Payment/create-payment-link",
+    PAYMENT: "/Payment/payment",
+    CHAT: "/Chat",
   },
   TIMEOUT: 10000,
 }

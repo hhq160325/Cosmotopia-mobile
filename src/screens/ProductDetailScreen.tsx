@@ -9,6 +9,8 @@ import { Spacing } from '../constants/Dimensions';
 import { Product } from '../types/products.type';
 import { CommonActions } from '@react-navigation/native';
 import { StorageService } from '../services/storageService';
+import { API_CONFIG } from '../config/api';
+
 
 type ProductDetailScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ProductDetail'>;
 
@@ -79,7 +81,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
         return;
       }
 
-      const response = await fetch('https://localhost:7191/api/cart/add', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CART_ADD}`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -124,7 +126,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
         return;
       }
 
-      const response = await fetch('https://localhost:7191/api/Order', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ORDER}`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',

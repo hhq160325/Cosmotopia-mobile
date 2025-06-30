@@ -4,6 +4,7 @@ import { Colors } from '../constants/Colors';
 import { Spacing, FontSize, BorderRadius } from '../constants/Dimensions';
 import type { StackNavigationProp } from "@react-navigation/stack";
 import type { RootStackParamList } from "../types/navigation";
+import { API_CONFIG } from '../config/api';
 
 interface Order {
   id: string;
@@ -41,7 +42,7 @@ const OrderHistoryScreen = ({ navigation }: Props) => {
     try {
       // TODO: Replace with actual API endpoint
       const response = await fetch(
-        'https://localhost:7191/api/Order/history?page=1&pageSize=20'
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ORDER_HISTORY}?page=1&pageSize=20`
       );
       if (!response.ok) {
         throw new Error('Failed to fetch order history');

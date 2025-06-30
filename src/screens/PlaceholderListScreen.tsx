@@ -8,6 +8,8 @@ import { Spacing } from '../constants/Dimensions';
 import { StorageService } from '../services/storageService';
 import { fetchCartItems } from '../services/cartService';
 import { useCart } from '../context/CartContext';
+import { API_CONFIG } from '../config/api';
+
 
 // Extend Product type for cart items to include quantity
 type CartProduct = BaseProduct & { quantity?: number };
@@ -73,7 +75,7 @@ const PlaceholderListScreen = () => {
       }
 
       const response = await fetch(
-        'https://localhost:7191/api/cart',
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CART}`,
         {
           method: 'GET',
           headers: {
@@ -134,11 +136,11 @@ const PlaceholderListScreen = () => {
   );
 
   const handleDeleteProduct = async (productId: string) => {
-    // console.log('Delete button clicked for product:', productId);
+    // console.log('Deleting product:', productId);
     
     try {
       const response = await fetch(
-        `https://localhost:7191/api/Product/DeleteProduct/${productId}`,
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.DELETE_PRODUCT}/${productId}`,
         {
           method: 'DELETE',
           headers: {
@@ -170,7 +172,7 @@ const PlaceholderListScreen = () => {
       const token = await StorageService.getAuthToken();
       if (!token) throw new Error('No authentication token found');
       const response = await fetch(
-        `https://localhost:7191/api/cart/remove/${productId}`,
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CART_REMOVE}/${productId}`,
         {
           method: 'DELETE',
           headers: {
@@ -195,7 +197,7 @@ const PlaceholderListScreen = () => {
       const token = await StorageService.getAuthToken();
       if (!token) throw new Error('No authentication token found');
       const response = await fetch(
-        'https://localhost:7191/api/Order',
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ORDER}`,
         {
           method: 'POST',
           headers: {

@@ -15,6 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { Spacing } from '../constants/Dimensions';
 import { StorageService } from '../services/storageService';
+import { API_CONFIG } from '../config/api';
+
 
 interface Message {
   id: string;
@@ -62,7 +64,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ isVisible, onClose }) =>
         return;
       }
 
-      const response = await fetch('https://localhost:7191/api/Chat', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CHAT}`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',

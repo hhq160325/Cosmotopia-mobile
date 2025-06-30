@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image } from 'react-native';
 import { StorageService } from '../services/storageService';
+import { API_CONFIG } from '../config/api';
 
 interface OrderDetail {
   id: string;
@@ -29,7 +30,7 @@ const OrderDetailScreen = () => {
       const token = await StorageService.getAuthToken();
       if (!token) throw new Error('Bạn chưa đăng nhập');
       const response = await fetch(
-        'https://localhost:7191/api/OrderDetail?page=1&pageSize=10',
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ORDER_DETAIL}?page=1&pageSize=10`,
         {
           method: 'GET',
           headers: {

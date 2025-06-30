@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, 
 import { StorageService } from '../services/storageService';
 import { CommonActions, useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { API_CONFIG } from '../config/api';
+
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -64,7 +66,7 @@ const PlaceholderKOLScreen = () => {
         setLoading(false);
         return;
       }
-      const response = await fetch('https://localhost:7191/api/KOLVideo/myVideos', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.KOL_VIDEO_MY_VIDEOS}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -145,7 +147,7 @@ const PlaceholderKOLScreen = () => {
         name: formData.file.name || 'video.mp4',
         type: formData.file.mimeType || 'video/mp4',
       } as any);
-      const response = await fetch('https://localhost:7191/api/KOLVideo/upload', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.KOL_VIDEO_UPLOAD}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -171,7 +173,7 @@ const PlaceholderKOLScreen = () => {
         try {
           const token = await StorageService.getAuthToken();
           if (!token) throw new Error('Chưa đăng nhập');
-          const response = await fetch(`https://localhost:7191/api/KOLVideo/${videoId}`, {
+          const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.KOL_VIDEO_DELETE}/${videoId}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` },
           });
@@ -215,7 +217,7 @@ const PlaceholderKOLScreen = () => {
           name: formData.file.name || 'video.mp4',
           type: formData.file.mimeType || 'video/mp4',
         } as any);
-        const response = await fetch(`https://localhost:7191/api/KOLVideo/${editingVideo.videoId}`, {
+        const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.KOL_VIDEO_UPDATE}/${editingVideo.videoId}`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -231,7 +233,7 @@ const PlaceholderKOLScreen = () => {
         fetchVideos();
         return;
       }
-      const response = await fetch(`https://localhost:7191/api/KOLVideo/${editingVideo.videoId}`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.KOL_VIDEO_UPDATE}/${editingVideo.videoId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

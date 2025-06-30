@@ -12,6 +12,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { StorageService } from '../services/storageService';
 import { useCart } from '../context/CartContext';
 import { fetchCartItems } from '../services/cartService';
+import { API_CONFIG } from '../config/api';
+
 
 type ScannerScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Scanner'>;
 
@@ -65,7 +67,7 @@ const ScannerScreen = ({ navigation }: Props) => {
 
   const fetchAvailableProducts = async () => {
     try {
-      const response = await fetch('https://localhost:7191/api/Product/GetAllProduct');
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.GET_ALL_PRODUCTS}`);
       if (!response.ok) {
         throw new Error('Failed to fetch products');
       }
@@ -354,7 +356,7 @@ const ScannerScreen = ({ navigation }: Props) => {
         return;
       }
 
-      const response = await fetch('https://localhost:7191/api/cart/add', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CART_ADD}`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',

@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Linking, RefreshControl } from 'react-native';
+import { API_CONFIG } from '../config/api';
+
 
 interface Video {
   videoId: string;
@@ -24,7 +26,7 @@ const PlaceholderKOLScreen = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('https://localhost:7191/api/KOLVideo/myVideos');
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.KOL_VIDEO_MY_VIDEOS}`);
       if (!response.ok) throw new Error('Failed to fetch videos');
       const data = await response.json();
       setVideos(Array.isArray(data) ? data : (data.videos || []));

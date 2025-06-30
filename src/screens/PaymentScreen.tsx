@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { Spacing } from '../constants/Dimensions';
 import { StorageService } from '../services/storageService';
+import { API_CONFIG } from '../config/api';
+
 
 const PaymentScreen = ({ navigation }: any) => {
   const [amount, setAmount] = useState('');
@@ -19,7 +21,7 @@ const PaymentScreen = ({ navigation }: any) => {
     setIsLoading(true);
     try {
       const token = await StorageService.getAuthToken();
-      const response = await fetch('https://localhost:7191/api/Payment/create-payment-link', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PAYMENT_CREATE_LINK}`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -47,7 +49,7 @@ const PaymentScreen = ({ navigation }: any) => {
     setIsLoading(true);
     try {
       const token = await StorageService.getAuthToken();
-      const response = await fetch('https://localhost:7191/api/Payment/payment', {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PAYMENT}`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
